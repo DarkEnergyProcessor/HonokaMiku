@@ -1,2 +1,2 @@
 # HonokaMiku
-LL!SIF game files decoder
+Universal Love Live! School Idol Festival game files decrypter/decoder
