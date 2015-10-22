@@ -7,6 +7,7 @@
 #include <exception>
 #include <stdexcept>
 #include <cstring>
+#include <cstdint>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -20,7 +21,6 @@ EN_Dctx::EN_Dctx(const char* header,const char* filename)
 	MD5_CTX* mctx;
 	const char* basename;
 	const char* basename2;
-	unsigned char magic_string[10];
 
 	basename=strrchr(filename,'/');
 	basename2=strrchr(filename,'\\');
@@ -33,9 +33,8 @@ EN_Dctx::EN_Dctx(const char* header,const char* filename)
 	}
 
 	mctx=new MD5_CTX;
-	memcpy(magic_string,"BFd3EnkcKa",10);
 	MD5Init(mctx);
-	MD5Update(mctx,magic_string,10);
+	MD5Update(mctx,(unsigned char*)"BFd3EnkcKa",10);
 	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 	MD5Final(mctx);
 
@@ -52,13 +51,13 @@ EN_Dctx::EN_Dctx(const char* header,const char* filename)
 	init_key=__builtin_bswap32(init_key)&2147483647;
 #endif
 	update_key=init_key;
-	xor_key=(init_key>>23)&255|((init_key>>15)&255)<<8;
+	xor_key=(init_key>>23)&255|(init_key>>7)&65280;
 	pos=0;
 
 	delete mctx;
 }
 
-void EN_Dctx::decrypt_block(void* b,unsigned int size)
+void EN_Dctx::decrypt_block(void* b,uint32_t size)
 {
 	if(size==0) return;
 
@@ -84,11 +83,11 @@ void EN_Dctx::decrypt_block(void* b,unsigned int size)
 	}
 }
 
-void EN_Dctx::goto_offset(long offset)
+void EN_Dctx::goto_offset(int32_t offset)
 {
 	if(offset==0) return;
 
-	int x=pos+offset;
+	int64_t x=pos+offset;
 	if(x<0) throw std::runtime_error(std::string("Position is negative."));
 
 	update_key=init_key;
@@ -102,7 +101,7 @@ void EN_Dctx::goto_offset(long offset)
 
 void EN_Dctx::update()
 {
-	unsigned int a,b,c,d,e,f;
+	uint32_t a,b,c,d,e,f;
 
 	a=update_key;
 	b=a>>16;
@@ -116,5 +115,5 @@ void EN_Dctx::update()
 		d+=e;
 
 	update_key=d;
-	xor_key=(d>>23)&255|((d>>15)&255)<<8;
+	xor_key=(d>>23)&255|(d>>7)&65280;
 }
