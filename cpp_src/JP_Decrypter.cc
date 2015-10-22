@@ -7,6 +7,7 @@
 #include <exception>
 #include <stdexcept>
 #include <cstring>
+#include <cstdint>
 
 #include "DecrypterContext.h"
 #include "Md5.h"
@@ -35,7 +36,6 @@ JP_Dctx::JP_Dctx(const char* header,const char* filename)
 	MD5_CTX* mctx;
 	const char* basename;
 	const char* basename2;
-	unsigned char magic_string[5];
 	unsigned int digcopy=0;
 
 	basename=strrchr(filename,'/');
@@ -49,9 +49,8 @@ JP_Dctx::JP_Dctx(const char* header,const char* filename)
 	}
 
 	mctx=new MD5_CTX;
-	memcpy(magic_string,"Hello",5);
 	MD5Init(mctx);
-	MD5Update(mctx,magic_string,5);
+	MD5Update(mctx,(unsigned char*)"Hello",5);
 	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 	MD5Final(mctx);
 	memcpy(&digcopy,mctx->digest+4,3);
@@ -71,7 +70,7 @@ JP_Dctx::JP_Dctx(const char* header,const char* filename)
 	delete mctx;
 }
 
-void JP_Dctx::decrypt_block(void* b,unsigned int size)
+void JP_Dctx::decrypt_block(void* b,uint32_t size)
 {
 	if(size==0) return;
 
@@ -83,7 +82,7 @@ void JP_Dctx::decrypt_block(void* b,unsigned int size)
 	}
 }
 
-void JP_Dctx::goto_offset(long offset)
+void JP_Dctx::goto_offset(int32_t offset)
 {
 	if(offset==0) return;
 
