@@ -6,17 +6,17 @@
 //#ifndef __SIF_DECRYPTER
 //#define __SIF_DECRYPTER
 
+#include <cstdint>
+
 struct DecrypterContext {
-	unsigned int init_key;
-	unsigned int update_key;
-	unsigned short xor_key;
-	unsigned int pos;
-	virtual void decrypt_block(void* b,unsigned int len)=0;
-	virtual void goto_offset(long offset)=0;
+	uint32_t init_key;
+	uint32_t update_key;
+	uint16_t xor_key;
+	uint32_t pos;
+	virtual void decrypt_block(void* b,uint32_t len)=0;
+	virtual void goto_offset(int32_t offset)=0;
 protected:
 	virtual void update()=0;
-	DecrypterContext() {};
-	~DecrypterContext() {};
 };
 
 class EN_Dctx:public DecrypterContext {
@@ -25,8 +25,8 @@ protected:
 public:
 	EN_Dctx();
 	EN_Dctx(const char* header,const char* filename);
-	void decrypt_block(void* b,unsigned int len);
-	void goto_offset(long offset);
+	void decrypt_block(void* b,uint32_t len);
+	void goto_offset(int32_t offset);
 };
 
 class JP_Dctx:public DecrypterContext {
@@ -35,8 +35,8 @@ protected:
 public:
 	JP_Dctx();
 	JP_Dctx(const char* header,const char* filename);
-	void decrypt_block(void* b,unsigned int len);
-	void goto_offset(long offset);
+	void decrypt_block(void* b,uint32_t len);
+	void goto_offset(int32_t offset);
 };
 
 typedef DecrypterContext Dctx;
