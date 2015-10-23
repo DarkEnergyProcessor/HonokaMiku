@@ -175,15 +175,15 @@ int main(int argc,char* argv[])
 	if(in==NULL)
 		failexit(errno,argv[1]);
 
-	if(argc>1)
+	if(argc>2)
 		file_out=argv[2];
 	else
 	{
-		size_t argv2_len=strlen(argv[2]);
-		file_out=new char[argv2_len+2];
-		memcpy(file_out,argv[2],argv2_len);
-		file_out[argv2_len]='_';
-		file_out[argv2_len+1]=0;
+		size_t argv1_len=strlen(argv[1]);
+		file_out=new char[argv1_len+2];
+		memcpy(file_out,argv[1],argv1_len);
+		file_out[argv1_len]='_';
+		file_out[argv1_len+1]=0;
 	}
 
 	if(strcmp(file_out,"-"))
