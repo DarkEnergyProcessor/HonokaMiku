@@ -41,6 +41,8 @@ char* g_MoreData=nullptr;
 Dctx* g_Dctx=nullptr;
 char* g_Basename=nullptr;
 bool g_Headless=false;
+int g_InPos=0;
+int g_OutPos=0;
 
 inline void usage_noexit(const char* p)
 {
@@ -77,9 +79,9 @@ void parse_args(int argc,char* argv[])
 {
 	using namespace std;
 
-	for(int i=3;i<argc;i++)
+	for(int i=1;i<argc;i++)
 	{
-		if(argv[i][0]=='-' || argv[i][0]=='/')
+		if((argv[i][0]=='-' || argv[i][0]=='/') && argv[i][1]!='\0')
 		{
 			char s=argv[i][1];
 			if(s=='b')
@@ -95,7 +97,7 @@ void parse_args(int argc,char* argv[])
 				else if(len>0) cerr << "Ignoring " << argv[i]+2 << " in " << argv[i] << ": additional data cannot be parsed" << endl;
 			}
 
-			else if(s=='h' && s=='?')
+			else if(s=='h' || s=='?')
 			{
 				usage(argv[0]);
 				exit(0);
@@ -118,8 +120,12 @@ void parse_args(int argc,char* argv[])
 				g_DecryptGame=1;
 
 			else
-				cerr << "Ignoring " << argv[i] << ": unknown option";
+				cerr << "Ignoring " << argv[i] << ": unknown option" << std::endl;
 		}
+		else if(g_InPos==0)
+			g_InPos=i;
+		else if(g_OutPos==0)
+			g_OutPos=i;
 		else
 			cerr << "Ignoring " << argv[i] << endl;
 	}
@@ -135,6 +141,8 @@ void check_args(char* argv[])
 		g_MoreData=NULL;	// discard
 
 	// check args
+	if(g_InPos==0) usage(argv[0]);
+
 	if(g_Headless && g_Encrypt)
 		failexit(argv[0],"only -n or -e are allowed");
 
@@ -167,16 +175,19 @@ int main(int argc,char* argv[])
 	FILE* in;
 	FILE* out;
 	char* file_out;
+
+	parse_args(argc,argv);
+	check_args(argv);
 	
-	if(strcmp(argv[1],"-"))
-		in=fopen(argv[1],"rb");
+	if(strcmp(argv[g_InPos],"-"))
+		in=fopen(argv[g_InPos],"rb");
 	else
 		in=stdin;
 	if(in==NULL)
 		failexit(errno,argv[1]);
 
-	if(argc>2)
-		file_out=argv[2];
+	if(g_OutPos)
+		file_out=argv[g_OutPos];
 	else
 	{
 		size_t argv1_len=strlen(argv[1]);
@@ -185,16 +196,6 @@ int main(int argc,char* argv[])
 		file_out[argv1_len]='_';
 		file_out[argv1_len+1]=0;
 	}
-
-	if(strcmp(file_out,"-"))
-		out=fopen(file_out,"wb");
-	else
-		out=stdout;
-	if(out==NULL)
-		failexit(errno,file_out);
-
-	if(argc>3) parse_args(argc,argv);
-	check_args(argv);
 
 	if(g_DecryptGame==0 && !(g_Encrypt || g_Headless))
 	{
@@ -301,7 +302,7 @@ int main(int argc,char* argv[])
 		{
 			failexit(argv[1],"decrypt","The specificed method cannot be used to decrypt this file");
 		}
-	}
+	}	
 
 	char* buffer;
 	size_t file_size;
@@ -316,8 +317,19 @@ int main(int argc,char* argv[])
 	fseek(in,header_size,SEEK_SET);
 	fread(buffer,1,file_size,in);
 	g_Dctx->decrypt_block(buffer,file_size);
-	fwrite(buffer,1,file_size,out);
 	fclose(in);
+
+	if(strcmp(file_out,"-"))
+		out=fopen(file_out,"wb");
+	else
+		out=stdout;
+	if(out==NULL)
+	{
+		std::cerr << "Cannot open " << file_out << ": " << strerror(errno) << std::endl << "Writing to stdout instead" << std::endl;
+		out=stdout;
+	}
+
+	fwrite(buffer,1,file_size,out);
 	fclose(out);
 	
 	delete g_Dctx;
