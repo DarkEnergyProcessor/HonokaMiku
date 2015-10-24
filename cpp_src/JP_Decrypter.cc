@@ -10,7 +10,7 @@
 #include <cstdint>
 
 #include "DecrypterContext.h"
-#include "Md5.h"
+#include "md5.h"
 
 const unsigned int keyTables[64]={
 1210253353	,1736710334	,1030507233	,1924017366,
@@ -92,7 +92,7 @@ void JP_Dctx::goto_offset(int32_t offset)
 	update_key=init_key;
 	xor_key=init_key>>24;
 	
-	if(x>1)
+	if(x>0)
 		for(int i=0;i<x;i++)
 			update();
 	pos=x;
