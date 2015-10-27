@@ -197,6 +197,15 @@ int main(int argc,char* argv[])
 		file_out[argv1_len+1]=0;
 	}
 
+	char* buffer;
+	size_t file_size;
+	size_t out_size;
+	size_t header_size;
+	fseek(in,0,SEEK_END);
+	file_size=ftell(in);
+	fseek(in,0,SEEK_SET);
+	buffer=new char[file_size+16];
+
 	if(g_DecryptGame==0 && !(g_Encrypt || g_Headless))
 	{
 		char header[16];
@@ -248,7 +257,8 @@ int main(int argc,char* argv[])
 
 		mctx=new MD5_CTX;
 		MD5Init(mctx);
-			switch(g_DecryptGame) {
+
+		switch(g_DecryptGame) {
 		case 1: {
 			MD5Update(mctx,(unsigned char*)"BFd3EnkcKa",10);
 			break;
@@ -258,13 +268,14 @@ int main(int argc,char* argv[])
 			break;
 				}
 		}
-			MD5Update(mctx,(unsigned char*)basename,strlen(basename));
+		
+		MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 		MD5Final(mctx);
-			switch(g_DecryptGame) {
+		switch(g_DecryptGame) {
 		case 1: {
 			memcpy(header,mctx->digest+4,4);
 			g_Dctx=new EN_Dctx(header,basename);
-			if(g_Encrypt) fwrite(header,1,4,out);
+			if(g_Encrypt) memcpy(buffer,header,4);
 			break;
 				}
 		case 2: {
@@ -275,10 +286,12 @@ int main(int argc,char* argv[])
 			*digcopy=~*digcopy;
 			header[3]=12;
 			g_Dctx=new JP_Dctx(header,basename);
-			if(g_Encrypt) fwrite(header,1,16,out);
+			if(g_Encrypt) memcpy(buffer,header,16);
 			break;
 				}
 		}
+
+		delete mctx;
 	}
 	else if(g_DecryptGame>0)
 	{
@@ -302,19 +315,18 @@ int main(int argc,char* argv[])
 		{
 			failexit(argv[1],"decrypt","The specificed method cannot be used to decrypt this file");
 		}
-	}	
+	}
 
-	char* buffer;
-	size_t file_size;
-	size_t header_size;
-	fseek(in,0,SEEK_END);
+	header_size=g_DecryptGame==1?4:16;
+	out_size=file_size;
 
-	file_size=ftell(in);
-	header_size=(g_Encrypt||g_Headless)?0:(g_DecryptGame==1?4:16);
-	file_size-=header_size;
-	buffer=new char[file_size];
-
-	fseek(in,header_size,SEEK_SET);
+	if(g_Encrypt)
+	{
+		buffer+=header_size;
+		out_size+=header_size;
+	}
+	else
+		out_size-=header_size;
 	fread(buffer,1,file_size,in);
 	g_Dctx->decrypt_block(buffer,file_size);
 	fclose(in);
@@ -329,7 +341,9 @@ int main(int argc,char* argv[])
 		out=stdout;
 	}
 
-	fwrite(buffer,1,file_size,out);
+	if(g_Encrypt)
+		buffer-=header_size;
+	fwrite(buffer,1,out_size,out);
 	fclose(out);
 	
 	delete g_Dctx;
