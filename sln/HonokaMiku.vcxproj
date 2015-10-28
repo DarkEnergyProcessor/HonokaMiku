@@ -83,6 +83,9 @@
     <ClCompile Include="..\cpp_src\JP_Decrypter.cc" />
     <ClCompile Include="..\cpp_src\md5.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\VersionInfo.rc" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
