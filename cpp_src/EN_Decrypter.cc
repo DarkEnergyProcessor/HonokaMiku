@@ -91,7 +91,7 @@ void EN_Dctx::goto_offset(int32_t offset)
 	if(x<0) throw std::runtime_error(std::string("Position is negative."));
 
 	update_key=init_key;
-	xor_key=(init_key>>15)&255|((init_key>>23)&255)<<8;
+	xor_key=(init_key>>23)&255|(init_key>>7)&65280;
 
 	if(x>1)
 		for(int i=1;i<=x/2;i++)
