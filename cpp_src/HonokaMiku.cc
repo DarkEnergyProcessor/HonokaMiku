@@ -161,6 +161,7 @@ void check_args(char* argv[])
 				if(g_MoreData==string_position || *string_position!=0)
 					failexit(argv[0],"<data> passed in -e or -n is not a hexadecimal number");
 
+				val=val>>8|val<<8;
 				g_MoreData=new char[2];
 				memcpy(g_MoreData,&val,2);
 			}
