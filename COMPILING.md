@@ -1,17 +1,21 @@
 # How to compile
 
-This project can be compiled under Visual Studio 2012 and GCC(with G++) 4.8.1 (or above)
+This project can be compiled under Visual Studio 2010, Visual Studio 2012, and GCC(with G++) 4.8.1 (or above)
 
 ### Linux
 
-In Linux, just clone this repository and type `make` in this directory.
+In Linux, type `make` in this directory.
 
 The Makefile script is only tested in Ubuntu & Windows.
 
-FIXME: I don't know how to `make install`. So if you know, please let me know.
-
 ### Windows
 
-In Windows with MinGW (gcc, g++, & make installed), just follow same step in Linux above.
+####Visual Studio 2010
+MinGW make is required. Open Visual Studio 2010 command prompt, navigate to this folder, and type `make vscmd`
 
-In Windows with Visual Studio 2012 or above, just open `sln/HonokaMiku.sln` and compile.
+####Visual Studio 2012 or above
+* Open `sln/HonokaMiku.sln` and compile, or;
+* Follow Visual Studio 2010 instruction above (use VS2012 command prompt instead).
+
+####GNU C/C++ Compiler v4.8.1
+Just follow Linux compiling instructions above.
