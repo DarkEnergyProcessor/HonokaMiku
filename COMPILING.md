@@ -17,5 +17,5 @@ MinGW make is required. Open Visual Studio 2010 command prompt, navigate to this
 * Open `sln/HonokaMiku.sln` and compile, or;
 * Follow Visual Studio 2010 instruction above (use VS2012 command prompt instead).
 
-####GNU C/C++ Compiler v4.8.1
+####MinGW
 Just follow Linux compiling instructions above.
