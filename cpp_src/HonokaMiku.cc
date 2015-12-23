@@ -32,22 +32,58 @@
 #include "DecrypterContext.h"
 #include "md5.h"
 
-static const char* usage_string[]={"HonokaMiku. Universal LL!SIF game files decrypter\nUsage: "," <input file> [output file] [options]\n <input file> and [output file] can be - for stdin and stdout.\n\nOptions:\n -b<name>                  Use basename <name> as decrypt/encrypt\n                           key.\n\n -e<data>                  Encrypt <input file> instead of decrypting\n                           it. <data> is game-specific. If you use\n                           this, -w or -j must be specificed.\n\n -h                        Show this message\n -?\n\n -j                        Decrypt: Assume <input file> is SIF JP\n                                    game files.\n                           Encrypt: <data> is unknown 2-byte composed\n                                    this way: <00><11>. It's unknown\n                                    how does it work, but those bytes\n                                    can be fetched from the existing\n                                    encrypted file(at index 10-11).\n                                    The data needs to be passed as\n                                    hexadecimal\n\n -n<data>                  Decrypt headless file. In that case, -b\n                           must be specificed and either -w or -j\n                           must be specificed too.\n                           -w: <data> is ignored\n                           -j: check -j Encrypt information.\n\n -w                        Decrypt: Assume <input file> is SIF EN\n                                    game files.\n                           Encrypt: <data> is unused.\n"};
+static char usage_string[]=
+	"HonokaMiku. Universal LL!SIF game files decrypter\n"
+	"Usage: %s <input file> [output file] [options]\n"
+	"<input file> and [output file] can be - for stdin and stdout.\n"
+	"\nOptions:\n"
+	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
+	"                           key.\n"
+	"\n"
+	" -e<data>                  Encrypt <input file> instead of decrypting\n"
+	"                           it. <data> is game-specific. If you use\n"
+	"                           this, -w, -j, or -t must be specificed.\n"
+	"\n"
+	" -h                        Show this message\n"
+	" -?\n"
+	"\n"
+	" -j                        Decrypt: Assume <input file> is SIF JP\n"
+	"                                    game file.\n"
+	"                           Encrypt: <data> is unknown 2-byte composed\n"
+	"                                    this way: <00><11>. It's unknown\n"
+	"                                    how does it work, but those bytes\n"
+	"                                    can be fetched from the existing\n"
+	"                                    encrypted file(at index 10-11).\n"
+	"                                    The data needs to be passed as\n"
+	"                                    hexadecimal\n"
+	"\n"
+	" -n<data>                  Decrypt headless file. In that case, -b\n"
+	"                           must be specificed and either -w, -j, or\n"
+	"                           -t must be specificed too.\n"
+	"                           -w or -t: <data> is ignored\n"
+	"                           -j: check -j Encrypt information.\n"
+	"\n"
+	" -t                        Decrypt: Assume <input file> is SIF TW\n"
+	"                           game file.\n"
+	"                           Encrypt: <data> is unused.\n"
+	"\n"
+	" -w                        Decrypt: Assume <input file> is SIF EN\n"
+	"                           game file.\n"
+	"                           Encrypt: <data> is unused.\n";
 
 /* globals */
-char g_DecryptGame=0;	// 0 = not specificed; 1 = ww/en; 2 = jp
+char g_DecryptGame=0;	// 0 = not specificed; 1 = ww/en; 2 = jp; 3 = tw
 bool g_Encrypt=false;
 char* g_MoreData=nullptr;
 Dctx* g_Dctx=nullptr;
-char* g_Basename=nullptr;
+const char* g_Basename=nullptr;
 bool g_Headless=false;
 int g_InPos=0;
 int g_OutPos=0;
 
 inline void usage_noexit(const char* p)
 {
-	using namespace std;
-	cerr << usage_string[0] << p << usage_string[1] << endl;
+	fprintf(stderr,usage_string,p);
 }
 
 void usage(const char* p)
@@ -116,6 +152,9 @@ void parse_args(int argc,char* argv[])
 				else if(len>0) cerr << "Ignoring " << argv[i]+2 << " in " << argv[i] << ": additional data cannot be parsed" << endl;
 			}
 
+			else if(s=='t')
+				g_DecryptGame=3;
+
 			else if(s=='w')
 				g_DecryptGame=1;
 
@@ -135,7 +174,7 @@ void check_args(char* argv[])
 {
 	// pre-check
 	if((g_Basename!=NULL && strlen(g_Basename)==0) || g_Basename==NULL)
-		g_Basename=argv[1];
+		g_Basename=argv[g_InPos];
 
 	if(g_MoreData!=NULL && strlen(g_MoreData)==0)
 		g_MoreData=NULL;	// discard
@@ -149,7 +188,7 @@ void check_args(char* argv[])
 	if(g_Encrypt || g_Headless)
 	{
 		if(g_DecryptGame==0)
-			failexit(argv[0],"-e or -n requires -w or -j");
+			failexit(argv[0],"-e or -n requires -w, -j, or -t");
 		else if(g_DecryptGame==2)
 		{
 			if(g_MoreData==NULL)
@@ -191,9 +230,9 @@ int main(int argc,char* argv[])
 		file_out=argv[g_OutPos];
 	else
 	{
-		size_t argv1_len=strlen(argv[1]);
+		size_t argv1_len=strlen(argv[g_InPos]);
 		file_out=new char[argv1_len+2];
-		memcpy(file_out,argv[1],argv1_len);
+		memcpy(file_out,argv[g_InPos],argv1_len);
 		file_out[argv1_len]='_';
 		file_out[argv1_len+1]=0;
 	}
@@ -230,8 +269,19 @@ int main(int argc,char* argv[])
 			}
 			catch(std::exception)
 			{
-				std::cerr << "cannot detect" << std::endl;
-				failexit(argv[1],"decrypt","Cannot find suitable decryption method");
+				fseek(in,0,SEEK_SET);
+				try
+				{
+					fread(header,1,4,in);
+					g_Dctx=new TW_Dctx(header,g_Basename);
+					std::cerr << "TW game file" << std::endl;
+					g_DecryptGame=3;
+				}
+				catch(std::exception)
+				{
+					std::cerr << "cannot detect" << std::endl;
+					failexit(argv[g_InPos],"decrypt","Cannot find suitable decryption method");
+				}
 			}
 		}
 	}
@@ -239,57 +289,59 @@ int main(int argc,char* argv[])
 	{
 		char header[16];
 		MD5_CTX* mctx;
-		char* basename;
-		char* basename2;
-		if(g_Basename==NULL)
-		{
-			basename=strrchr(argv[1],'/');
-			basename2=strrchr(argv[1],'\\');
-			if(basename==basename2)
-				basename=argv[1];
-			else
-			{
-				basename=basename>basename2?basename:basename2;
-				basename++;
-			}
-		}
-		else
-			basename=g_Basename;
+		if(g_Basename==NULL) g_Basename=__DctxGetBasename(argv[g_InPos]);
 
 		mctx=new MD5_CTX;
 		MD5Init(mctx);
 
 		switch(g_DecryptGame) {
-		case 1: {
-			MD5Update(mctx,(unsigned char*)"BFd3EnkcKa",10);
-			break;
-				}
-		case 2: {
-			MD5Update(mctx,(unsigned char*)"Hello",5);
-			break;
-				}
+			case 1:
+			{
+				MD5Update(mctx,(unsigned char*)"BFd3EnkcKa",10);
+				break;
+			}
+			case 2:
+			{
+				MD5Update(mctx,(unsigned char*)"Hello",5);
+				break;
+			}
+			case 3:
+			{
+				MD5Update(mctx,(unsigned char*)"M2o2B7i3M6o6N88",15);
+				break;
+			}
 		}
 		
-		MD5Update(mctx,(unsigned char*)basename,strlen(basename));
+		MD5Update(mctx,(unsigned char*)g_Basename,strlen(g_Basename));
 		MD5Final(mctx);
+
 		switch(g_DecryptGame) {
-		case 1: {
-			memcpy(header,mctx->digest+4,4);
-			g_Dctx=new EN_Dctx(header,basename);
-			if(g_Encrypt) memcpy(buffer,header,4);
-			break;
-				}
-		case 2: {
-			unsigned int* digcopy=(unsigned int*)header;
-			memset(header,0,16);
-			memcpy(header,mctx->digest+4,3);
-			memcpy(header+10,g_MoreData,2);
-			*digcopy=~*digcopy;
-			header[3]=12;
-			g_Dctx=new JP_Dctx(header,basename);
-			if(g_Encrypt) memcpy(buffer,header,16);
-			break;
-				}
+			case 1:
+			{
+				memcpy(header,mctx->digest+4,4);
+				g_Dctx=new EN_Dctx(header,g_Basename);
+				if(g_Encrypt) memcpy(buffer,header,4);
+				break;
+			}
+			case 2:
+			{
+				unsigned int* digcopy=(unsigned int*)header;
+				memset(header,0,16);
+				memcpy(header,mctx->digest+4,3);
+				memcpy(header+10,g_MoreData,2);
+				*digcopy=~*digcopy;
+				header[3]=12;
+				g_Dctx=new JP_Dctx(header,g_Basename);
+				if(g_Encrypt) memcpy(buffer,header,16);
+				break;
+			}
+			case 3:
+			{
+				memcpy(header,mctx->digest+4,4);
+				g_Dctx=new TW_Dctx(header,g_Basename);
+				if(g_Encrypt) memcpy(buffer,header,4);
+				break;
+			}
 		}
 
 		delete mctx;
@@ -300,25 +352,33 @@ int main(int argc,char* argv[])
 		try
 		{
 			switch(g_DecryptGame) {
-			case 1: {
-				fread(header,1,4,in);
-				g_Dctx=new EN_Dctx(header,g_Basename);
-				break;
-					}
-			case 2: {
-				fread(header,1,16,in);
-				g_Dctx=new JP_Dctx(header,g_Basename);
-				break;
-					}
+				case 1:
+				{
+					fread(header,1,4,in);
+					g_Dctx=new EN_Dctx(header,g_Basename);
+					break;
+				}
+				case 2:
+				{
+					fread(header,1,16,in);
+					g_Dctx=new JP_Dctx(header,g_Basename);
+					break;
+				}
+				case 3:
+				{
+					fread(header,1,4,in);
+					g_Dctx=new TW_Dctx(header,g_Basename);
+					break;
+				}
 			}
 		}
 		catch(std::exception)
 		{
-			failexit(argv[1],"decrypt","The specificed method cannot be used to decrypt this file");
+			failexit(argv[g_InPos],"decrypt","The specificed method cannot be used to decrypt this file");
 		}
 	}
 
-	header_size=g_DecryptGame==1?4:16;
+	header_size=g_DecryptGame==2?16:4;
 	out_size=file_size;
 
 	if(g_Encrypt)
@@ -328,14 +388,12 @@ int main(int argc,char* argv[])
 	}
 	else
 		out_size-=header_size;
+
 	fread(buffer,1,file_size,in);
 	g_Dctx->decrypt_block(buffer,file_size);
 	fclose(in);
 
-	if(strcmp(file_out,"-"))
-		out=fopen(file_out,"wb");
-	else
-		out=stdout;
+	out=strcmp(file_out,"-")==0?stdout:fopen(file_out,"wb");
 	if(out==NULL)
 	{
 		std::cerr << "Cannot open " << file_out << ": " << strerror(errno) << std::endl << "Writing to stdout instead" << std::endl;

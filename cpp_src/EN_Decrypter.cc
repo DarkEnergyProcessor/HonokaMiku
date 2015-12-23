@@ -9,28 +9,13 @@
 #include <cstring>
 #include <cstdint>
 
-#ifdef _MSC_VER
-#include <intrin.h>
-#endif
-
 #include "DecrypterContext.h"
 #include "Md5.h"
 
 EN_Dctx::EN_Dctx(const char* header,const char* filename)
 {
 	MD5_CTX* mctx;
-	const char* basename;
-	const char* basename2;
-
-	basename=strrchr(filename,'/');
-	basename2=strrchr(filename,'\\');
-	if(basename==basename2)	// NULL==NULL = true
-		basename=filename;
-	else
-	{
-		basename=basename>basename2?basename:basename2;
-		basename++;
-	}
+	const char* basename=__DctxGetBasename(filename);
 
 	mctx=new MD5_CTX;
 	MD5Init(mctx);

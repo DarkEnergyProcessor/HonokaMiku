@@ -1,8 +1,8 @@
 // HonokaMiku VersionInfo Resource file
 
 1 VERSIONINFO
-FILEVERSION		1,0,0,0
-PRODUCTVERSION	1,0,0,0
+FILEVERSION		1,1,0,0
+PRODUCTVERSION	1,1,0,0
 FILEFLAGSMASK 0x17L
 FILEOS 0x40004L
 FILETYPE 0x1L
@@ -14,12 +14,12 @@ BEGIN
 		BEGIN
 			VALUE "CompanyName", "Dark Energy Processor Corporation"
 			VALUE "FileDescription", "Universal LL!SIF game files decrypter"
-			VALUE "FileVersion", ""
+			VALUE "FileVersion", "1.1.0.0"
 			VALUE "InternalName", "HonokaMiku"
-			VALUE "LegalCopyright", "Copyright Â© 2036 Dark Energy Processor Corporation"
+			VALUE "LegalCopyright", "Copyright © 2036 Dark Energy Processor Corporation"
 			VALUE "OriginalFilename", "HonokaMiku.exe"
 			VALUE "ProductName", "HonokaMiku"
-			VALUE "ProductVersion", ""
+			VALUE "ProductVersion", "1.1.0.0"
 		END
 	END
 	BLOCK "VarFileInfo"

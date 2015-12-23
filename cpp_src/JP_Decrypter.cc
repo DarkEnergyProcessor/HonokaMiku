@@ -34,19 +34,8 @@ const unsigned int keyTables[64]={
 JP_Dctx::JP_Dctx(const char* header,const char* filename)
 {
 	MD5_CTX* mctx;
-	const char* basename;
-	const char* basename2;
+	const char* basename=__DctxGetBasename(filename);
 	unsigned int digcopy=0;
-
-	basename=strrchr(filename,'/');
-	basename2=strrchr(filename,'\\');
-	if(basename==basename2)
-		basename=filename;
-	else
-	{
-		basename=basename>basename2?basename:basename2;
-		basename++;
-	}
 
 	mctx=new MD5_CTX;
 	MD5Init(mctx);
