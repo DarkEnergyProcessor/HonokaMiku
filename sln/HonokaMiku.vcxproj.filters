@@ -14,5 +14,11 @@
     </ClCompile>
     <ClCompile Include="..\cpp_src\HonokaMiku.cc" />
     <ClCompile Include="..\cpp_src\md5.c" />
+    <ClCompile Include="..\cpp_src\TW_Decrypter.cc">
+      <Filter>Decrypter</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\VersionInfo.rc" />
   </ItemGroup>
 </Project>
