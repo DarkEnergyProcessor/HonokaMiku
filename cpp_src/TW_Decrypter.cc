@@ -10,7 +10,7 @@
 #include <cstdint>
 
 #include "DecrypterContext.h"
-#include "Md5.h"
+#include "md5.h"
 
 TW_Dctx::TW_Dctx(const char* header,const char* filename):EN_Dctx()
 {
