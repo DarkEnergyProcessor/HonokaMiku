@@ -1,8 +1,19 @@
 // HonokaMiku VersionInfo Resource file
 
+#define _DEPSTR1(x) #x
+#define _STR2(x) _DEPSTR1(x)
+
+#define HONOKAMIKU_VERSION_MAJOR 1
+#define HONOKAMIKU_VERSION_MINOR 1
+#define HONOKAMIKU_VERSION_PATCH 1
+#define HONOKAMIKU_VERSION_STRING "" _STR2(HONOKAMIKU_VERSION_MAJOR) "." _STR2(HONOKAMIKU_VERSION_MINOR) "." _STR2(HONOKAMIKU_VERSION_PATCH) ""
+#define HONOKAMIKU_VERSION_STRING_RC "1.1.1.0"
+
+#ifdef RC_INVOKED
+
 1 VERSIONINFO
-FILEVERSION		1,1,0,0
-PRODUCTVERSION	1,1,0,0
+FILEVERSION		HONOKAMIKU_VERSION_MAJOR,HONOKAMIKU_VERSION_MINOR,HONOKAMIKU_VERSION_PATCH,0
+PRODUCTVERSION	HONOKAMIKU_VERSION_MAJOR,HONOKAMIKU_VERSION_MINOR,HONOKAMIKU_VERSION_PATCH,0
 FILEFLAGSMASK 0x17L
 FILEOS 0x40004L
 FILETYPE 0x1L
@@ -14,12 +25,14 @@ BEGIN
 		BEGIN
 			VALUE "CompanyName", "Dark Energy Processor Corporation"
 			VALUE "FileDescription", "Universal LL!SIF game files decrypter"
-			VALUE "FileVersion", "1.1.0.0"
+			VALUE "FileVersion", HONOKAMIKU_VERSION_STRING_RC
+			//VALUE "FileVersion", "1.1.0.0"
 			VALUE "InternalName", "HonokaMiku"
-			VALUE "LegalCopyright", "Copyright © 2036 Dark Energy Processor Corporation"
+			VALUE "LegalCopyright", "Copyright © 2037 Dark Energy Processor Corporation"
 			VALUE "OriginalFilename", "HonokaMiku.exe"
 			VALUE "ProductName", "HonokaMiku"
-			VALUE "ProductVersion", "1.1.0.0"
+			VALUE "ProductVersion", HONOKAMIKU_VERSION_STRING_RC
+			//VALUE "ProductVersion", "1.1.0.0"
 		END
 	END
 	BLOCK "VarFileInfo"
@@ -27,3 +40,5 @@ BEGIN
 		VALUE "Translation", 0x0, 0
 	END
 END
+
+#endif

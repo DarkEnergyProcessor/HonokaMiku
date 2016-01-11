@@ -6,7 +6,7 @@
 //#ifndef __SIF_DECRYPTER
 //#define __SIF_DECRYPTER
 
-#include <cstdint>
+#include <stdint.h>
 #include <cstring>
 
 struct DecrypterContext {

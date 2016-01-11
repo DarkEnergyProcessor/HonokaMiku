@@ -3,11 +3,12 @@
 * Decrypts SIF TW game files
 **/
 
+#include <stdint.h>
+
 #include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <cstring>
-#include <cstdint>
 
 #include "DecrypterContext.h"
 #include "md5.h"

@@ -1,4 +1,4 @@
-Copyright © 2036 Dark Energy Processor Corporation
+Copyright © 2037 Dark Energy Processor Corporation
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -15,4 +15,4 @@ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FO
 DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-This project uses MD5. It not uses same license as this project. Please see `cpp_src/md5.h` for more details.
+This project uses MD5. It does not uses same license as this project. Please see `cpp_src/md5.h` for more details.

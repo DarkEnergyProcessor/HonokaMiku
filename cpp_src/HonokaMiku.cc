@@ -2,7 +2,7 @@
 * HonokaMiku.cc
 * Main program
 *
-* Copyright © 2036 Dark Energy Processor Corporation
+* Copyright © 2037 Dark Energy Processor Corporation
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 * associated documentation files (the "Software"), to deal in the Software without restriction,
@@ -23,18 +23,20 @@
 #include <iostream>
 #include <string>
 
+#include <stdint.h>
+
 #include <cstdio>
 #include <cstdlib>
-#include <cstdint>
 #include <cerrno>
 #include <cstring>
 
 #include "DecrypterContext.h"
 #include "md5.h"
+#include "CompilerName.h"
+#include "../VersionInfo.rc"
 
 static char usage_string[]=
-	"HonokaMiku. Universal LL!SIF game files decrypter\n"
-	"Usage: %s <input file> [output file] [options]\n"
+	"Usage: %s <input file> [output file=input] [options]\n"
 	"<input file> and [output file] can be - for stdin and stdout.\n"
 	"\nOptions:\n"
 	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
@@ -57,15 +59,11 @@ static char usage_string[]=
 	"                                    The data needs to be passed as\n"
 	"                                    hexadecimal\n"
 	"\n"
-	" -n<data>                  Decrypt headless file. In that case, -b\n"
-	"                           must be specificed and either -w, -j, or\n"
-	"                           -t must be specificed too.\n"
-	"                           -w or -t: <data> is ignored\n"
-	"                           -j: check -j Encrypt information.\n"
-	"\n"
 	" -t                        Decrypt: Assume <input file> is SIF TW\n"
 	"                           game file.\n"
 	"                           Encrypt: <data> is unused.\n"
+	"\n"
+	" -v                        Show version.\n"
 	"\n"
 	" -w                        Decrypt: Assume <input file> is SIF EN\n"
 	"                           game file.\n"
@@ -74,10 +72,9 @@ static char usage_string[]=
 /* globals */
 char g_DecryptGame=0;	// 0 = not specificed; 1 = ww/en; 2 = jp; 3 = tw
 bool g_Encrypt=false;
-char* g_MoreData=nullptr;
-Dctx* g_Dctx=nullptr;
-const char* g_Basename=nullptr;
-bool g_Headless=false;
+char* g_MoreData=NULL;
+Dctx* g_Dctx=NULL;
+const char* g_Basename=NULL;
 int g_InPos=0;
 int g_OutPos=0;
 
@@ -141,19 +138,18 @@ void parse_args(int argc,char* argv[])
 
 			else if(s=='j')
 				g_DecryptGame=2;
-
-			else if(s=='n')
-			{
-				char* data=argv[i]+2;
-				size_t len=strlen(data);
-				g_Headless=true;
-
-				if(len==4) g_MoreData=data;
-				else if(len>0) cerr << "Ignoring " << argv[i]+2 << " in " << argv[i] << ": additional data cannot be parsed" << endl;
-			}
-
+			
 			else if(s=='t')
 				g_DecryptGame=3;
+
+			else if(s=='v')
+			{
+				fputs("Version " HONOKAMIKU_VERSION_STRING "\n",stdout);
+				fputs("Build at " __DATE__ " " __TIME__ "\n",stderr);
+				fprintf(stderr,"Compiled using %s\n\n",CompilerName());
+
+				exit(0);
+			}
 
 			else if(s=='w')
 				g_DecryptGame=1;
@@ -182,23 +178,20 @@ void check_args(char* argv[])
 	// check args
 	if(g_InPos==0) usage(argv[0]);
 
-	if(g_Headless && g_Encrypt)
-		failexit(argv[0],"only -n or -e are allowed");
-
-	if(g_Encrypt || g_Headless)
+	if(g_Encrypt)
 	{
 		if(g_DecryptGame==0)
-			failexit(argv[0],"-e or -n requires -w, -j, or -t");
+			failexit(argv[0],"-e requires -w, -j, or -t");
 		else if(g_DecryptGame==2)
 		{
 			if(g_MoreData==NULL)
-				failexit(argv[0],"-e or -n with -j requires <data>");
+				failexit(argv[0],"-e with -j requires <data>");
 			else
 			{
 				char* string_position;
 				short val=strtol(g_MoreData,&string_position,16);
 				if(g_MoreData==string_position || *string_position!=0)
-					failexit(argv[0],"<data> passed in -e or -n is not a hexadecimal number");
+					failexit(argv[0],"<data> passed in -e is not a hexadecimal number");
 
 				val=val>>8|val<<8;
 				g_MoreData=new char[2];
@@ -210,6 +203,7 @@ void check_args(char* argv[])
 
 int main(int argc,char* argv[])
 {
+	fputs("HonokaMiku. Universal LL!SIF game files decrypter\n",stderr);
 	if(argc<2) usage(argv[0]);
 	
 	FILE* in;
@@ -233,8 +227,6 @@ int main(int argc,char* argv[])
 		size_t argv1_len=strlen(argv[g_InPos]);
 		file_out=new char[argv1_len+2];
 		memcpy(file_out,argv[g_InPos],argv1_len);
-		file_out[argv1_len]='_';
-		file_out[argv1_len+1]=0;
 	}
 
 	char* buffer;
@@ -246,7 +238,7 @@ int main(int argc,char* argv[])
 	fseek(in,0,SEEK_SET);
 	buffer=new char[file_size+16];
 
-	if(g_DecryptGame==0 && !(g_Encrypt || g_Headless))
+	if(g_DecryptGame==0 && !g_Encrypt)
 	{
 		char header[16];
 		std::cerr << "Auto detecting: ";
@@ -285,7 +277,7 @@ int main(int argc,char* argv[])
 			}
 		}
 	}
-	else if(g_DecryptGame>0 && (g_Encrypt || g_Headless))
+	else if(g_DecryptGame>0 && g_Encrypt)
 	{
 		char header[16];
 		MD5_CTX* mctx;
