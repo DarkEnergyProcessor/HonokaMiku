@@ -5,7 +5,6 @@
 
 #include <stdint.h>
 
-#include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <cstring>
@@ -13,7 +12,7 @@
 #include "DecrypterContext.h"
 #include "md5.h"
 
-const unsigned int keyTables[64]={
+static const unsigned int keyTables[64]={
 1210253353	,1736710334	,1030507233	,1924017366,
 1603299666	,1844516425	,1102797553	,32188137,
 782633907	,356258523	,957120135	,10030910,
@@ -32,6 +31,13 @@ const unsigned int keyTables[64]={
 870997426	,1221338057	,1623152467	,1020681319
 };
 
+#if defined(__GNUC__) && ((__GNUC__==4 && __GNUC_MINOR__<8) || __GNUC__<4)
+static inline unsigned short __builtin_bswap16(unsigned short a)
+{
+	return (a<<8)|(a>>8);
+}
+#endif
+
 JP_Dctx::JP_Dctx(const char* header,const char* filename)
 {
 	MD5_CTX* mctx;
@@ -44,7 +50,7 @@ JP_Dctx::JP_Dctx(const char* header,const char* filename)
 	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 	MD5Final(mctx);
 	memcpy(&digcopy,mctx->digest+4,3);
-	digcopy=((~digcopy)<<8)>>8;
+	digcopy=(~digcopy)&0xffffff;
 
 	if(memcmp(&digcopy,header,3))
 	{
@@ -58,6 +64,52 @@ JP_Dctx::JP_Dctx(const char* header,const char* filename)
 	pos=0;
 
 	delete mctx;
+}
+
+JP_Dctx* JP_Dctx::encrypt_setup(const char* filename,void* hdr_out)
+{
+	JP_Dctx* dctx=new JP_Dctx;
+	const char* basename=__DctxGetBasename(filename);
+	MD5_CTX* mctx=new MD5_CTX;
+	unsigned int digcopy=0;
+	char hdr_create[16];
+
+	MD5Init(mctx);
+	MD5Update(mctx,(unsigned char*)"Hello",5);
+	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
+	MD5Final(mctx);
+	memcpy(&digcopy,mctx->digest+4,3);
+	digcopy=(~digcopy)&0xffffff;
+	
+	memset(hdr_create,0,16);
+	memcpy(&dctx->init_key,mctx->digest,4);
+	memcpy(hdr_out,mctx->digest,4);
+
+	// Create Version3 header
+	{
+		unsigned short key_picker=500;
+		hdr_create[3]=12;
+		memcpy(hdr_create,&digcopy,3);
+		for(size_t i=0;basename[i]!=0;i++)
+			key_picker+=basename[i];
+
+#ifdef _MSC_VER
+		key_picker=_byteswap_ushort(key_picker);
+#elif defined(__GNUG__)
+		key_picker=__builtin_bswap16(key_picker);
+#else
+		key_picker=htons(key_picker);
+#endif
+		memcpy(hdr_create+10,&key_picker,2);
+	}
+	dctx->init_key=keyTables[hdr_create[11]&63];
+	dctx->update_key=dctx->init_key;
+	dctx->xor_key=dctx->init_key>>24;
+	dctx->pos=0;
+
+	memcpy(hdr_out,hdr_create,16);
+	delete mctx;
+	return dctx;
 }
 
 void JP_Dctx::decrypt_block(void* b,uint32_t size)
@@ -88,7 +140,6 @@ void JP_Dctx::goto_offset(int32_t offset)
 	pos=x;
 }
 
-void JP_Dctx::update() {
-	update_key=update_key*214013+2531011;
-	xor_key=update_key>>24;
+inline void JP_Dctx::update() {
+	xor_key=(update_key=update_key*214013+2531011)>>24;
 }

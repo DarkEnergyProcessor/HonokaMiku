@@ -16,8 +16,6 @@ struct DecrypterContext {
 	uint32_t pos;
 	virtual void decrypt_block(void* b,uint32_t len)=0;
 	virtual void goto_offset(int32_t offset)=0;
-protected:
-	virtual void update()=0;
 };
 
 class EN_Dctx:public DecrypterContext {
@@ -28,6 +26,7 @@ public:
 	EN_Dctx(const char* header,const char* filename);
 	void decrypt_block(void* b,uint32_t len);
 	void goto_offset(int32_t offset);
+	static EN_Dctx* encrypt_setup(const char* filename,void* hdr_out);
 };
 
 class JP_Dctx:public DecrypterContext {
@@ -38,13 +37,28 @@ public:
 	JP_Dctx(const char* header,const char* filename);
 	void decrypt_block(void* b,uint32_t len);
 	void goto_offset(int32_t offset);
+	static JP_Dctx* encrypt_setup(const char* filename,void* hdr_out);
 };
 
 // SIF TW Decryption method shares with SIF WW decryption method but with different constructor
 class TW_Dctx:public EN_Dctx
 {
+protected:
+	TW_Dctx():EN_Dctx() {}
 public:
 	TW_Dctx(const char* header,const char* filename);
+	static TW_Dctx* encrypt_setup(const char* filename,void* hdr_out);
+};
+
+// Also SIF KR Decryption method shares with SIF WW decryption.
+// This also can be used to encrypt SIF JP game files but it's untested.
+class KR_Dctx:public EN_Dctx
+{
+protected:
+	KR_Dctx():EN_Dctx() {}
+public:
+	KR_Dctx(const char* header,const char* filename);
+	static KR_Dctx* encrypt_setup(const char* filename,void* hdr_out);
 };
 
 // Inline function to retrieve the basename

@@ -3,11 +3,11 @@
 #define _DEPSTR1(x) #x
 #define _STR2(x) _DEPSTR1(x)
 
-#define HONOKAMIKU_VERSION_MAJOR 1
-#define HONOKAMIKU_VERSION_MINOR 1
-#define HONOKAMIKU_VERSION_PATCH 1
+#define HONOKAMIKU_VERSION_MAJOR 2
+#define HONOKAMIKU_VERSION_MINOR 0
+#define HONOKAMIKU_VERSION_PATCH 0
 #define HONOKAMIKU_VERSION_STRING "" _STR2(HONOKAMIKU_VERSION_MAJOR) "." _STR2(HONOKAMIKU_VERSION_MINOR) "." _STR2(HONOKAMIKU_VERSION_PATCH) ""
-#define HONOKAMIKU_VERSION_STRING_RC "1.1.1.0"
+#define HONOKAMIKU_VERSION_STRING_RC "2.0.0.0"
 
 #ifdef RC_INVOKED
 
@@ -26,13 +26,11 @@ BEGIN
 			VALUE "CompanyName", "Dark Energy Processor Corporation"
 			VALUE "FileDescription", "Universal LL!SIF game files decrypter"
 			VALUE "FileVersion", HONOKAMIKU_VERSION_STRING_RC
-			//VALUE "FileVersion", "1.1.0.0"
 			VALUE "InternalName", "HonokaMiku"
 			VALUE "LegalCopyright", "Copyright © 2037 Dark Energy Processor Corporation"
 			VALUE "OriginalFilename", "HonokaMiku.exe"
 			VALUE "ProductName", "HonokaMiku"
 			VALUE "ProductVersion", HONOKAMIKU_VERSION_STRING_RC
-			//VALUE "ProductVersion", "1.1.0.0"
 		END
 	END
 	BLOCK "VarFileInfo"

@@ -29,9 +29,9 @@ with_resource_static: md5.o bindir
 
 vscmd: bindir
 	-mkdir bin/vscmd
-	cl -W3 -Zc:wchar_t -Ox -D"_CRT_SECURE_NO_WARNINGS" -D"WIN32" -D"_CONSOLE" -EHsc -MT -c cpp_src\\HonokaMiku.cc cpp_src\\EN_Decrypter.cc cpp_src\\JP_Decrypter.cc cpp_src\\TW_Decrypter.cc cpp_src\\md5.c
+	cl -W3 -Zc:wchar_t -Ox -D"_CRT_SECURE_NO_WARNINGS" -D"WIN32" -D"_CONSOLE" -EHsc -MT -c cpp_src\\*.c*
 	rc -v -l 0 VersionInfo.rc
-	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -MANIFEST -NXCOMPAT -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG -RELEASE -SUBSYSTEM:CONSOLE HonokaMiku.obj EN_Decrypter.obj JP_Decrypter.obj md5.obj TW_Decrypter.obj VersionInfo.res
+	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -MANIFEST -NXCOMPAT -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG -RELEASE -SUBSYSTEM:CONSOLE *.obj VersionInfo.res
 	rm *.obj VersionInfo.res
 
 # Install needs to be root(sudo su)
