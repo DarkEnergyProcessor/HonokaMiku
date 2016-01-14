@@ -1,6 +1,6 @@
 /**
-* KR_Decrypter.cc
-* Decrypts SIF KR game files.
+* CN_Decrypter.cc
+* Decrypts SIF CN game files
 **/
 
 #include <stdint.h>
@@ -12,14 +12,14 @@
 #include "DecrypterContext.h"
 #include "md5.h"
 
-KR_Dctx::KR_Dctx(const char* header,const char* filename):EN_Dctx()
+CN_Dctx::CN_Dctx(const char* header,const char* filename):EN_Dctx()
 {
 	MD5_CTX* mctx;
 	const char* basename=__DctxGetBasename(filename);
 
 	mctx=new MD5_CTX;
 	MD5Init(mctx);
-	MD5Update(mctx,(unsigned char*)"Hello",5);
+	MD5Update(mctx,(unsigned char*)"iLbs0LpvJrXm3zjdhAr4",20);
 	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 	MD5Final(mctx);
 
@@ -44,14 +44,14 @@ KR_Dctx::KR_Dctx(const char* header,const char* filename):EN_Dctx()
 	delete mctx;
 }
 
-KR_Dctx* KR_Dctx::encrypt_setup(const char* filename,void* hdr_out)
+CN_Dctx* CN_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 {
-	KR_Dctx* dctx=new KR_Dctx;
+	CN_Dctx* dctx=new CN_Dctx;
 	const char* basename=__DctxGetBasename(filename);
 	MD5_CTX* mctx=new MD5_CTX;
 	
 	MD5Init(mctx);
-	MD5Update(mctx,(unsigned char*)"Hello",5);
+	MD5Update(mctx,(unsigned char*)"iLbs0LpvJrXm3zjdhAr4",20);
 	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
 	MD5Final(mctx);
 	

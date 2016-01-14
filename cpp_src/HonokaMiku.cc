@@ -42,9 +42,11 @@ static char usage_string[]=
 	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
 	"                           key.\n"
 	"\n"
+	" -c                        Assume <input file> is SIF CN game file.\n"
+	"\n"
 	" -e                        Encrypt <input file> instead of decrypting\n"
-	"                           it. If you use this, -w, -j, or -t must be\n"
-	"                           specificed.\n"
+	"                           it. If you use this, one of the game file\n"
+	"                           flag must be specificed.\n"
 	"\n"
 	" -h                        Show this message\n"
 	" -?\n"
@@ -60,7 +62,7 @@ static char usage_string[]=
 	" -w                        Assume <input file> is SIF EN game file.\n";
 
 /* globals */
-char g_DecryptGame=0;	// 0 = not specificed; 1 = ww/en; 2 = jp; 3 = tw; 4 = kr; 5 = cn (planned)
+char g_DecryptGame=0;	// 0 = not specificed; 1 = ww/en; 2 = jp; 3 = tw; 4 = kr; 5 = cn
 bool g_Encrypt=false;
 Dctx* g_Dctx=NULL;
 const char* g_Basename=NULL;
@@ -108,6 +110,9 @@ void parse_args(int argc,char* argv[])
 			char s=argv[i][1];
 			if(s=='b')
 				g_Basename=argv[i]+2;
+
+			else if(s=='c')
+				g_DecryptGame=5;
 
 			else if(s=='e')
 				g_Encrypt=true;
@@ -242,8 +247,17 @@ int main(int argc,char* argv[])
 					}
 					catch(std::exception)
 					{
-						std::cerr << "cannot detect" << std::endl;
-						failexit(argv[g_InPos],"decrypt","Cannot find suitable decryption method");
+						try
+						{
+							g_Dctx=new CN_Dctx(header,g_Basename);
+							std::cerr << "CN game file" << std::endl;
+							g_DecryptGame=5;
+						}
+						catch(std::exception)
+						{
+							std::cerr << "cannot detect" << std::endl;
+							failexit(argv[g_InPos],"decrypt","Cannot find suitable decryption method");
+						}
 					}
 				}
 			}
@@ -284,6 +298,13 @@ int main(int argc,char* argv[])
 				memcpy(buffer,header,4);
 				break;
 			}
+			case 5:
+			{
+				std::cerr << "CN game file" << std::endl;
+				g_Dctx=CN_Dctx::encrypt_setup(g_Basename,header);
+				memcpy(buffer,header,4);
+				break;
+			}
 		}
 	}
 	else if(g_DecryptGame>0)
@@ -319,6 +340,13 @@ int main(int argc,char* argv[])
 					std::cerr << "KR game file" << std::endl;
 					fread(header,1,4,in);
 					g_Dctx=new KR_Dctx(header,g_Basename);
+					break;
+				}
+				case 5:
+				{
+					std::cerr << "CN game file" << std::endl;
+					fread(header,1,4,in);
+					g_Dctx=new CN_Dctx(header,g_Basename);
 					break;
 				}
 			}

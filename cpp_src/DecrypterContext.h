@@ -61,6 +61,16 @@ public:
 	static KR_Dctx* encrypt_setup(const char* filename,void* hdr_out);
 };
 
+// I think SIF CN decryption uses Version 1 but actually it uses Version 2.
+class CN_Dctx:public EN_Dctx
+{
+protected:
+	CN_Dctx():EN_Dctx() {}
+public:
+	CN_Dctx(const char* header,const char* filename);
+	static CN_Dctx* encrypt_setup(const char* filename,void* hdr_out);
+};
+
 // Inline function to retrieve the basename
 inline const char* __DctxGetBasename(const char* filename)
 {

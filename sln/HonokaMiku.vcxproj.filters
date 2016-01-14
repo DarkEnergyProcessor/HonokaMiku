@@ -20,6 +20,9 @@
     <ClCompile Include="..\cpp_src\KR_Decrypter.cc">
       <Filter>Decrypter</Filter>
     </ClCompile>
+    <ClCompile Include="..\cpp_src\CN_Decrypter.cc">
+      <Filter>Decrypter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\VersionInfo.rc" />
