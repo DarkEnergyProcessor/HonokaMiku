@@ -82,8 +82,6 @@ JP_Dctx* JP_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 	digcopy=(~digcopy)&0xffffff;
 	
 	memset(hdr_create,0,16);
-	memcpy(&dctx->init_key,mctx->digest,4);
-	memcpy(hdr_out,mctx->digest,4);
 
 	// Create Version3 header
 	{

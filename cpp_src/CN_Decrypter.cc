@@ -56,7 +56,7 @@ CN_Dctx* CN_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 	MD5Final(mctx);
 	
 	memcpy(&dctx->init_key,mctx->digest,4);
-	memcpy(hdr_out,mctx->digest,4);
+	memcpy(hdr_out,mctx->digest+4,4);
 #ifdef _MSC_VER
 	dctx->init_key=_byteswap_ulong(dctx->init_key)&2147483647;
 #elif defined(__GNUG__)
