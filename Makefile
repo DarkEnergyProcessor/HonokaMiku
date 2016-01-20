@@ -1,7 +1,7 @@
 # HonokaMiku Makefile.
 # Compiles HonokaMiku to /bin/<option> folder
 
-$(NDK_BUILD) ?= ndk-build
+NDK_BUILD ?= ndk-build
 
 all: md5.o bindir honokamiku
 
