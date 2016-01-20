@@ -1,7 +1,7 @@
 # HonokaMiku Makefile.
 # Compiles HonokaMiku to /bin/<option> folder
 
-$(NDK_BUILD) ?= ndk-build
+NDK_BUILD ?= ndk-build
 
 all: md5.o bindir honokamiku
 
@@ -26,7 +26,7 @@ static_link: md5.o bindir
 with_resource_static: md5.o bindir
 	-mkdir bin/with_resource_static
 	windres -O coff VersionInfo.rc VersionInfo.res
-	g++ -static-libgcc -static-libstdc++ -O3 -o ./bin/with_resource_static/HonokaMiku cpp_src/*.cc cpp_src/md5.o VersionInfo.res
+	g++ -static-libgcc -static-libstdc++ -mpreferred-stack-boundary=4 -O3 -o ./bin/with_resource_static/HonokaMiku cpp_src/*.cc cpp_src/md5.o VersionInfo.res
 	-rm cpp_src/md5.o VersionInfo.res
 
 vscmd: bindir
