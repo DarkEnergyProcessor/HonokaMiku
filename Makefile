@@ -1,6 +1,8 @@
 # HonokaMiku Makefile.
 # Compiles HonokaMiku to /bin/<option> folder
 
+$(NDK_BUILD) ?= ndk-build
+
 all: md5.o bindir honokamiku
 
 everything: md5.o honokamiku static_link with_resource_static
@@ -33,6 +35,25 @@ vscmd: bindir
 	rc -v -l 0 VersionInfo.rc
 	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -MANIFEST -NXCOMPAT -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG -RELEASE -SUBSYSTEM:CONSOLE *.obj VersionInfo.res
 	rm *.obj VersionInfo.res
+
+ndk_arm: bindir
+	-mkdir bin/jni
+	-mkdir bin/jni/armeabi
+	-mkdir bin/jni/armeabi-v7a
+	-mkdir bin/jni/armeabi/stripped
+	-mkdir bin/jni/armeabi-v7a/stripped
+	-mkdir jni
+	cp cpp_src/* jni/
+	mv *.mk jni/
+	$(NDK_BUILD)
+	cp obj/local/armeabi/HonokaMiku bin/jni/armeabi/
+	cp obj/local/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/
+	rm -R obj
+	cp libs/armeabi/HonokaMiku bin/jni/armeabi/stripped/
+	cp libs/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/stripped/
+	mv jni/*.mk .
+	rm -R libs
+	rm -R jni
 
 # Install needs to be root(sudo su)
 install:
