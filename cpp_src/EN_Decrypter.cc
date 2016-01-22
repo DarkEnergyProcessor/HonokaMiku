@@ -85,7 +85,7 @@ void EN_Dctx::decrypt_block(void* b,uint32_t size)
 		buffer++;
 	}
 
-	for(int i=0;i<size;i++)
+	for(unsigned int i=0;i<size;i++)
 	{
 		if(i%2==0)
 			buffer[i]^=char(xor_key);
