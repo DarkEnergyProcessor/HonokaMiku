@@ -5,8 +5,6 @@ NDK_BUILD ?= ndk-build
 
 all: md5.o bindir honokamiku
 
-everything: md5.o honokamiku static_link with_resource_static
-
 md5.o:
 	gcc -c -o cpp_src/md5.o cpp_src/md5.c
 
@@ -36,24 +34,48 @@ vscmd: bindir
 	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -MANIFEST -NXCOMPAT -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG -RELEASE -SUBSYSTEM:CONSOLE *.obj VersionInfo.res
 	rm *.obj VersionInfo.res
 
-ndk_arm: bindir
+ndk: bindir
 	-mkdir bin/jni
+	-mkdir bin/jni/arm64-v8a
+	-mkdir bin/jni/arm64-v8a/stripped
 	-mkdir bin/jni/armeabi
-	-mkdir bin/jni/armeabi-v7a
 	-mkdir bin/jni/armeabi/stripped
+	-mkdir bin/jni/armeabi-v7a
 	-mkdir bin/jni/armeabi-v7a/stripped
+	-mkdir bin/jni/mips
+	-mkdir bin/jni/mips/stripped
+	-mkdir bin/jni/mips64
+	-mkdir bin/jni/mips64/stripped
+	-mkdir bin/jni/x86
+	-mkdir bin/jni/x86/stripped
+	-mkdir bin/jni/x86_64
+	-mkdir bin/jni/x86_64/stripped
 	-mkdir jni
 	cp cpp_src/* jni/
 	mv *.mk jni/
 	$(NDK_BUILD)
-	cp obj/local/armeabi/HonokaMiku bin/jni/armeabi/
-	cp obj/local/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/
+	-cp obj/local/arm64-v8a/HonokaMiku bin/jni/arm64-v8a/
+	-cp obj/local/armeabi/HonokaMiku bin/jni/armeabi/
+	-cp obj/local/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/
+	-cp obj/local/mips/HonokaMiku bin/jni/mips/
+	-cp obj/local/mips64/HonokaMiku bin/jni/mips64/
+	-cp obj/local/x86/HonokaMiku bin/jni/x86/
+	-cp obj/local/x86_64/HonokaMiku bin/jni/x86_64/
 	rm -R obj
-	cp libs/armeabi/HonokaMiku bin/jni/armeabi/stripped/
-	cp libs/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/stripped/
+	-cp libs/arm64-v8a/HonokaMiku bin/jni/arm64-v8a/stripped/
+	-cp libs/armeabi/HonokaMiku bin/jni/armeabi/stripped/
+	-cp libs/armeabi-v7a/HonokaMiku bin/jni/armeabi-v7a/stripped/
+	-cp libs/mips/HonokaMiku bin/jni/mips/stripped/
+	-cp libs/mips64/HonokaMiku bin/jni/mips64/stripped/
+	-cp libs/x86/HonokaMiku bin/jni/x86/stripped/
+	-cp libs/x86_64/HonokaMiku bin/jni/x86_64/stripped/
 	mv jni/*.mk .
 	rm -R libs
 	rm -R jni
+	#-find bin/jni/ -type d -empty -delete	#Throws error when using Command Prompt directly to build (without Cygwin)
+
+clean:
+	-rm -R bin
 
 # Install needs to be root(sudo su)
 install:

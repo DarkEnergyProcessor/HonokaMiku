@@ -8,5 +8,7 @@ LOCAL_MODULE := HonokaMiku
 LOCAL_SRC_FILES := md5.c CN_Decrypter.cc EN_Decrypter.cc HonokaMiku.cc JP_Decrypter.cc KR_Decrypter.cc TW_Decrypter.cc
 LOCAL_CPPFLAGS := -fexceptions
 LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib
+LOCAL_CFLAGS += -fPIE
+LOCAL_LDFLAGS += -fPIE -pie
 
 include $(BUILD_EXECUTABLE)
