@@ -12,6 +12,13 @@
 #include "DecrypterContext.h"
 #include "md5.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <WinSock2.h>
+#else
+#include <arpa/inet.h>
+#endif
+
 static const unsigned int keyTables[64]={
 1210253353	,1736710334	,1030507233	,1924017366,
 1603299666	,1844516425	,1102797553	,32188137,
@@ -31,82 +38,62 @@ static const unsigned int keyTables[64]={
 870997426	,1221338057	,1623152467	,1020681319
 };
 
-#if defined(__GNUC__) && ((__GNUC__==4 && __GNUC_MINOR__<8) || __GNUC__<4)
-static inline unsigned short __builtin_bswap16(unsigned short a)
-{
-	return (a<<8)|(a>>8);
-}
-#endif
-
 JP_Dctx::JP_Dctx(const char* header,const char* filename)
 {
-	MD5_CTX* mctx;
+	MD5 mctx;
 	const char* basename=__DctxGetBasename(filename);
-	unsigned int digcopy=0;
+	size_t base_len=strlen(basename);
+	uint32_t digcopy=0;
+	uint16_t name_sum=500;
 
-	mctx=new MD5_CTX;
-	MD5Init(mctx);
-	MD5Update(mctx,(unsigned char*)"Hello",5);
-	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
-	MD5Final(mctx);
-	memcpy(&digcopy,mctx->digest+4,3);
+	mctx.Init();
+	mctx.Update(reinterpret_cast<const uint8_t*>("Hello"),5);
+	mctx.Update((unsigned char*)basename,base_len);
+	mctx.Final();
+	memcpy(&digcopy,mctx.digestRaw+4,3);
 	digcopy=(~digcopy)&0xffffff;
+	for(uint32_t i=0;i<base_len;i++)
+		name_sum+=basename[i];
 
-	if(memcmp(&digcopy,header,3))
-	{
-		delete mctx;
+	if(memcmp(&digcopy,header,3) || ntohs(*reinterpret_cast<const uint16_t*>(header+10))!=name_sum)
 		throw std::runtime_error(std::string("Header file doesn't match."));
-	}
 
 	init_key=keyTables[header[11]&63];
 	update_key=init_key;
 	xor_key=init_key>>24;
 	pos=0;
-
-	delete mctx;
 }
 
 JP_Dctx* JP_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 {
 	JP_Dctx* dctx=new JP_Dctx;
+	MD5 mctx;
 	const char* basename=__DctxGetBasename(filename);
-	MD5_CTX* mctx=new MD5_CTX;
-	unsigned int digcopy=0;
 	char hdr_create[16];
+	uint32_t digcopy=0;
+	uint16_t key_picker=500;
 
-	MD5Init(mctx);
-	MD5Update(mctx,(unsigned char*)"Hello",5);
-	MD5Update(mctx,(unsigned char*)basename,strlen(basename));
-	MD5Final(mctx);
-	memcpy(&digcopy,mctx->digest+4,3);
-	digcopy=(~digcopy)&0xffffff;
-	
+	mctx.Init();
+	mctx.Update(reinterpret_cast<const uint8_t*>("Hello"),5);
+	mctx.Update((unsigned char*)basename,strlen(basename));
+	mctx.Final();
+	memcpy(&digcopy,mctx.digestRaw+4,3);
 	memset(hdr_create,0,16);
+	digcopy=(~digcopy)&0xffffff;
 
-	// Create Version3 header
-	{
-		unsigned short key_picker=500;
-		hdr_create[3]=12;
-		memcpy(hdr_create,&digcopy,3);
-		for(size_t i=0;basename[i]!=0;i++)
-			key_picker+=basename[i];
+	hdr_create[3]=12;
+	memcpy(hdr_create,&digcopy,3);
+	for(size_t i=0;basename[i]!=0;i++)
+		key_picker+=basename[i];
+	key_picker=htons(key_picker);
+	memcpy(hdr_create+10,&key_picker,2);
 
-#ifdef _MSC_VER
-		key_picker=_byteswap_ushort(key_picker);
-#elif defined(__GNUG__)
-		key_picker=__builtin_bswap16(key_picker);
-#else
-		key_picker=htons(key_picker);
-#endif
-		memcpy(hdr_create+10,&key_picker,2);
-	}
 	dctx->init_key=keyTables[hdr_create[11]&63];
 	dctx->update_key=dctx->init_key;
 	dctx->xor_key=dctx->init_key>>24;
 	dctx->pos=0;
 
 	memcpy(hdr_out,hdr_create,16);
-	delete mctx;
 	return dctx;
 }
 

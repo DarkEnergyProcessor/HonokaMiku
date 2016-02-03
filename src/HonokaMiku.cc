@@ -338,7 +338,7 @@ int main(int argc,char* argv[])
 			in=stdin;
 		
 		if(in==NULL)
-			failexit(errno,argv[1]);
+			failexit(errno,argv[g_InPos]);
 	}
 	else
 	{

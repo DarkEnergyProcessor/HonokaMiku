@@ -6,21 +6,11 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\cpp_src\EN_Decrypter.cc">
+    <ClCompile Include="..\src\JP_Decrypter.cc">
       <Filter>Decrypter</Filter>
     </ClCompile>
-    <ClCompile Include="..\cpp_src\JP_Decrypter.cc">
-      <Filter>Decrypter</Filter>
-    </ClCompile>
-    <ClCompile Include="..\cpp_src\HonokaMiku.cc" />
-    <ClCompile Include="..\cpp_src\md5.c" />
-    <ClCompile Include="..\cpp_src\TW_Decrypter.cc">
-      <Filter>Decrypter</Filter>
-    </ClCompile>
-    <ClCompile Include="..\cpp_src\KR_Decrypter.cc">
-      <Filter>Decrypter</Filter>
-    </ClCompile>
-    <ClCompile Include="..\cpp_src\CN_Decrypter.cc">
+    <ClCompile Include="..\src\HonokaMiku.cc" />
+    <ClCompile Include="..\src\V2_Decrypter.cc">
       <Filter>Decrypter</Filter>
     </ClCompile>
   </ItemGroup>
