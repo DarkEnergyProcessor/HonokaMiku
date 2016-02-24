@@ -10,20 +10,13 @@
 #include <stdexcept>
 #include <cstring>
 
-// Byte-order function. Copied from Itsudemo
-#ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
-#include <WinSock2.h>
-#else
-#include <arpa/inet.h>
-#endif
-
 #include "DecrypterContext.h"
 #include "md5.h"
 
-V2_Dctx::V2_Dctx(const char* prefix,const char* header,const char* filename)
+V2_Dctx::V2_Dctx(const char* prefix,const void* _hdr,const char* filename)
 {
 	MD5 mctx;
+	const uint8_t* header=reinterpret_cast<const uint8_t*>(_hdr);
 	const char* basename=__DctxGetBasename(filename);
 
 	mctx.Init();
@@ -34,8 +27,11 @@ V2_Dctx::V2_Dctx(const char* prefix,const char* header,const char* filename)
 	if(memcmp(header,mctx.digestRaw+4,4))
 		throw std::runtime_error(std::string("Header file doesn't match."));
 
+	/*
 	memcpy(&init_key,mctx.digestRaw,4);
 	init_key=htonl(init_key)&2147483647;
+	*/
+	init_key=((mctx.digestRaw[0]&127)<<24)|(mctx.digestRaw[1]<<16)|(mctx.digestRaw[2]<<8)|mctx.digestRaw[3];
 	update_key=init_key;
 	xor_key=(init_key>>23)&255|(init_key>>7)&65280;
 	pos=0;
@@ -127,9 +123,12 @@ void setupEncryptV2(DecrypterContext* dctx,const char* prefix,const char* filena
 	mctx.Update(reinterpret_cast<const uint8_t*>(basename),strlen(basename));
 	mctx.Final();
 	
-	memcpy(&dctx->init_key,mctx.digestRaw,4);
 	memcpy(hdr_out,mctx.digestRaw+4,4);
+	/*
+	memcpy(&dctx->init_key,mctx.digestRaw,4);
 	dctx->init_key=htonl(dctx->init_key)&2147483647;
+	*/
+	dctx->init_key=((mctx.digestRaw[0]&127)<<24)|(mctx.digestRaw[1]<<16)|(mctx.digestRaw[2]<<8)|mctx.digestRaw[3];
 	dctx->update_key=dctx->init_key;
 	dctx->xor_key=(dctx->init_key>>23)&255|(dctx->init_key>>7)&65280;
 	dctx->pos=0;

@@ -30,7 +30,7 @@ protected:
 	JP_Dctx() {}
 	void update();
 public:
-	JP_Dctx(const char* header,const char* filename);
+	JP_Dctx(const void* header,const char* filename);
 	void decrypt_block(void* b,uint32_t len);
 	void goto_offset(int32_t offset);
 	static JP_Dctx* encrypt_setup(const char* filename,void* hdr_out);
@@ -40,7 +40,7 @@ public:
 class V2_Dctx:public DecrypterContext {
 protected:
 	V2_Dctx() {}
-	V2_Dctx(const char* prefix,const char* header,const char* filename);
+	V2_Dctx(const char* prefix,const void* header,const char* filename);
 	void update();
 public:
 	void decrypt_block(void* b,uint32_t len);
@@ -51,7 +51,7 @@ class EN_Dctx:public V2_Dctx {
 protected:
 	EN_Dctx():V2_Dctx() {}
 public:
-	EN_Dctx(const char* header,const char* filename):V2_Dctx("BFd3EnkcKa",header,filename) {}
+	EN_Dctx(const void* header,const char* filename):V2_Dctx("BFd3EnkcKa",header,filename) {}
 	inline static EN_Dctx* encrypt_setup(const char* filename,void* hdr_out)
 	{
 		EN_Dctx* dctx=new EN_Dctx();
@@ -66,7 +66,7 @@ class TW_Dctx:public V2_Dctx
 protected:
 	TW_Dctx():V2_Dctx() {}
 public:
-	TW_Dctx(const char* header,const char* filename):V2_Dctx("M2o2B7i3M6o6N88",header,filename) {}
+	TW_Dctx(const void* header,const char* filename):V2_Dctx("M2o2B7i3M6o6N88",header,filename) {}
 	inline static TW_Dctx* encrypt_setup(const char* filename,void* hdr_out)
 	{
 		TW_Dctx* dctx=new TW_Dctx();
@@ -82,7 +82,7 @@ class KR_Dctx:public V2_Dctx
 protected:
 	KR_Dctx():V2_Dctx() {}
 public:
-	KR_Dctx(const char* header,const char* filename):V2_Dctx("Hello",header,filename) {}
+	KR_Dctx(const void* header,const char* filename):V2_Dctx("Hello",header,filename) {}
 	inline static KR_Dctx* encrypt_setup(const char* filename,void* hdr_out)
 	{
 		KR_Dctx* dctx=new KR_Dctx();
@@ -97,7 +97,7 @@ class CN_Dctx:public V2_Dctx
 protected:
 	CN_Dctx():V2_Dctx() {}
 public:
-	CN_Dctx(const char* header,const char* filename):V2_Dctx("iLbs0LpvJrXm3zjdhAr4",header,filename) {}
+	CN_Dctx(const void* header,const char* filename):V2_Dctx("iLbs0LpvJrXm3zjdhAr4",header,filename) {}
 	inline static CN_Dctx* encrypt_setup(const char* filename,void* hdr_out)
 	{
 		CN_Dctx* dctx=new CN_Dctx();

@@ -1,0 +1,5 @@
+bin/*
+sln/*
+!sln/HonokaMiku.sln
+!sln/HonokaMiku.vcxproj
+!sln/HonokaMiku.vcxproj.filter

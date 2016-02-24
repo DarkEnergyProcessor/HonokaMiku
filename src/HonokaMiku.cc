@@ -94,15 +94,15 @@ bool g_TestMode=false;		// Detect only.
 
 char get_gametype(const char* a)
 {
-	if(DEPCASEISTRCMP(a,"w",10)==0 || DEPCASEISTRCMP(a,"sif-ww",10)==0 || DEPCASEISTRCMP(a,"sif-en",10)==0)
+	if(DEPCASEISTRCMP(a,"w",2)==0 || DEPCASEISTRCMP(a,"sif-ww",7)==0 || DEPCASEISTRCMP(a,"sif-en",10)==0)
 		return 1;
-	else if(DEPCASEISTRCMP(a,"j",10)==0 || DEPCASEISTRCMP(a,"sif-jp",10)==0)
+	else if(DEPCASEISTRCMP(a,"j",2)==0 || DEPCASEISTRCMP(a,"sif-jp",7)==0)
 		return 2;
-	else if(DEPCASEISTRCMP(a,"t",10)==0 || DEPCASEISTRCMP(a,"sif-tw",10)==0)
+	else if(DEPCASEISTRCMP(a,"t",2)==0 || DEPCASEISTRCMP(a,"sif-tw",7)==0)
 		return 3;
-	else if(DEPCASEISTRCMP(a,"k",10)==0 || DEPCASEISTRCMP(a,"sif-kr",10)==0)
+	else if(DEPCASEISTRCMP(a,"k",2)==0 || DEPCASEISTRCMP(a,"sif-kr",7)==0)
 		return 4;
-	else if(DEPCASEISTRCMP(a,"c",10)==0 || DEPCASEISTRCMP(a,"sif-cn",10)==0)
+	else if(DEPCASEISTRCMP(a,"c",2)==0 || DEPCASEISTRCMP(a,"sif-cn",7)==0)
 		return 5;
 	return 0;
 }
@@ -181,34 +181,34 @@ void parse_args(int argc,char* argv[])
 					if(g_XEncryptGame==0) cerr << "Ignoring --cross-encrypt: Unknown game type" << endl;
 				}
 
-				else if(DEPCASEISTRCMP(start_arg,"encrypt",7)==0 && start_arg[7]==0)
+				else if(DEPCASEISTRCMP(start_arg,"encrypt",8)==0 && start_arg[7]==0)
 					g_Encrypt=true;
 
-				else if(DEPCASEISTRCMP(start_arg,"detect",6)==0 && start_arg[6]==0)
+				else if(DEPCASEISTRCMP(start_arg,"detect",7)==0 && start_arg[6]==0)
 					g_TestMode=true;
 
-				else if(DEPCASEISTRCMP(start_arg,"help",4)==0 && start_arg[4]==0)
+				else if(DEPCASEISTRCMP(start_arg,"help",5)==0 && start_arg[4]==0)
 				{
 					usage_noexit(argv[0]);
 					exit(0);
 				}
 
-				else if(DEPCASEISTRCMP(start_arg,"sif-cn",6)==0 && start_arg[6]==0)
+				else if(DEPCASEISTRCMP(start_arg,"sif-cn",7)==0 && start_arg[6]==0)
 					g_DecryptGame=5;
 
-				else if((DEPCASEISTRCMP(start_arg,"sif-en",6)==0 || DEPCASEISTRCMP(start_arg,"sif-ww",6)==0) && start_arg[6]==0)
+				else if((DEPCASEISTRCMP(start_arg,"sif-en",7)==0 || DEPCASEISTRCMP(start_arg,"sif-ww",6)==0) && start_arg[6]==0)
 					g_DecryptGame=1;
 				
-				else if(DEPCASEISTRCMP(start_arg,"sif-jp",6)==0 && start_arg[6]==0)
+				else if(DEPCASEISTRCMP(start_arg,"sif-jp",7)==0 && start_arg[6]==0)
 					g_DecryptGame=2;
 				
-				else if(DEPCASEISTRCMP(start_arg,"sif-kr",6)==0 && start_arg[6]==0)
+				else if(DEPCASEISTRCMP(start_arg,"sif-kr",7)==0 && start_arg[6]==0)
 					g_DecryptGame=4;
 				
-				else if(DEPCASEISTRCMP(start_arg,"sif-tw",6)==0 && start_arg[6]==0)
+				else if(DEPCASEISTRCMP(start_arg,"sif-tw",7)==0 && start_arg[6]==0)
 					g_DecryptGame=3;
 
-				else if(DEPCASEISTRCMP(start_arg,"version",7)==0 && start_arg[7]==0)
+				else if(DEPCASEISTRCMP(start_arg,"version",8)==0 && start_arg[7]==0)
 				{
 					fputs("Version " HONOKAMIKU_VERSION_STRING "\n",stdout);
 					fputs("Build at " __DATE__ " " __TIME__ "\n",stderr);
@@ -264,7 +264,7 @@ void parse_args(int argc,char* argv[])
 
 			else if(s=='v')
 			{
-				fputs("Version " HONOKAMIKU_VERSION_STRING "\n",stdout);
+				fputs("Version " HONOKAMIKU_VERSION_STRING "\n",stderr);
 				fputs("Build at " __DATE__ " " __TIME__ "\n",stderr);
 				fprintf(stderr,"Compiled using %s\n\n",CompilerName());
 
@@ -372,23 +372,17 @@ int main(int argc,char* argv[])
 	if((g_DecryptGame==0 && !g_Encrypt) || g_TestMode)
 	{
 		char header[16];
-		std::ostream* conout;
+		std::ostream& conout=g_TestMode?std::cout:std::cerr;
 
 		if(g_TestMode)
-		{
 			std::cout << "Detecting: ";
-			conout=&std::cout;
-		}
 		else
-		{
 			std::cerr << "Auto detecting: ";
-			conout=&std::cerr;
-		}
 		try
 		{
 			fread(header,1,4,in);
 			g_Dctx=new EN_Dctx(header,g_Basename);
-			*conout << "EN game file" << std::endl;
+			conout << "EN game file" << std::endl;
 			g_DecryptGame=1;
 		}
 		catch(std::exception)
@@ -398,7 +392,7 @@ int main(int argc,char* argv[])
 			{
 				fread(header,1,16,in);
 				g_Dctx=new JP_Dctx(header,g_Basename);
-				*conout << "JP game file" << std::endl;
+				conout << "JP game file" << std::endl;
 				g_DecryptGame=2;
 			}
 			catch(std::exception)
@@ -407,7 +401,7 @@ int main(int argc,char* argv[])
 				try
 				{
 					g_Dctx=new TW_Dctx(header,g_Basename);
-					*conout << "TW game file" << std::endl;
+					conout << "TW game file" << std::endl;
 					g_DecryptGame=3;
 				}
 				catch(std::exception)
@@ -415,7 +409,7 @@ int main(int argc,char* argv[])
 					try
 					{
 						g_Dctx=new KR_Dctx(header,g_Basename);
-						*conout << "KR game file" << std::endl;
+						conout << "KR game file" << std::endl;
 						g_DecryptGame=4;
 					}
 					catch(std::exception)
@@ -423,12 +417,12 @@ int main(int argc,char* argv[])
 						try
 						{
 							g_Dctx=new CN_Dctx(header,g_Basename);
-							*conout << "CN game file" << std::endl;
+							conout << "CN game file" << std::endl;
 							g_DecryptGame=5;
 						}
 						catch(std::exception)
 						{
-							*conout << "Unknown" << std::endl;
+							conout << "Unknown" << std::endl;
 							if(!g_TestMode)
 								failexit(argv[g_InPos],"decrypt","Cannot find suitable decryption method");
 						}

@@ -22,11 +22,12 @@
 // These notices must be retained in any copies of any part of this
 // documentation and/or software.
 
-
-
 // The original md5 implementation avoids external libraries.
 // This version has dependency on stdio.h for file input and
 // string.h for memcpy.
+
+// From https://bobobobo.wordpress.com/2010/10/17/md5-c-implementation/
+
 #include <stdio.h>
 #include <string.h>
 
@@ -48,11 +49,6 @@
 #define S42 10
 #define S43 15
 #define S44 21
-
-
-
-
-
 
 static unsigned char PADDING[64] = {
   0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
