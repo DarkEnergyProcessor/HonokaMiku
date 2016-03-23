@@ -24,13 +24,13 @@ all: honokamiku
 honokamiku:
 	-mkdir -p bin/honokamiku
 	$(RC_C)
-	g++ -O3 -o ./bin/honokamiku/HonokaMiku -pie -fPIE $(DEBUG_GENERATE) $(WIN32_ARG) src/*.cc $(RC_F)
+	g++ -O3 -o ./bin/honokamiku/HonokaMiku -pie -fPIE $(DEBUG_GENERATE) $(WIN32_ARG) $(CFLAGS) src/*.cc $(RC_F)
 	$(RC_D)
 
 static_link:
 	-mkdir -p bin/static_link
 	$(RC_C)
-	g++ -static-libgcc -static-libstdc++ -pie -fPIE $(DEBUG_GENERATE) -O3 -o ./bin/static_link/HonokaMiku $(WIN32_ARG) src/*.cc $(RC_F)
+	g++ -static-libgcc -static-libstdc++ -pie -fPIE $(DEBUG_GENERATE) -O3 -o ./bin/static_link/HonokaMiku $(WIN32_ARG) $(CFLAGS) src/*.cc $(RC_F)
 	$(RC_D)
 
 ifeq ($(VSINSTALLDIR),)

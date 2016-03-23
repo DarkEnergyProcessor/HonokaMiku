@@ -49,7 +49,7 @@ JP_Dctx::JP_Dctx(const void* _hdr,const char* filename)
 	for(uint32_t i=0;i<base_len;i++)
 		name_sum+=basename[i];
 
-	if(memcmp(&digcopy,header,3) || /*ntohs(*reinterpret_cast<const uint16_t*>(header+10))*/((uint16_t(header[10])<<8)|header[11])!=name_sum)
+	if(memcmp(&digcopy,header,3) || ((uint16_t(header[10])<<8)|header[11])!=name_sum)
 		throw std::runtime_error(std::string("Header file doesn't match."));
 
 	init_key=keyTables[header[11]&63];
@@ -79,10 +79,7 @@ JP_Dctx* JP_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 	memcpy(hdr_create,&digcopy,3);
 	for(size_t i=0;basename[i]!=0;i++)
 		key_picker+=basename[i];
-	/*
-	key_picker=htons(key_picker);
-	memcpy(hdr_create+10,&key_picker,2);
-	*/
+
 	hdr_create[10]=key_picker>>8;
 	hdr_create[11]=key_picker&255;
 
@@ -105,6 +102,7 @@ void JP_Dctx::decrypt_block(void* b,uint32_t size)
 		buffer[i]^=char(xor_key);
 		update();
 	}
+	pos+=size;
 }
 
 void JP_Dctx::goto_offset(int32_t offset)
