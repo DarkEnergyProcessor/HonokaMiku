@@ -3,53 +3,69 @@
 
 NDK_BUILD ?= ndk-build
 
-# Check if windows (add --dynamicbase and --nxcompat)
-ifeq ($(OS),Windows_NT)
-WIN32_ARG := -Wl,--dynamicbase -Wl,--nxcompat
-RC_C := windres -O coff VersionInfo.rc VersionInfo.res
-RC_D := rm VersionInfo.res
-RC_F := VersionInfo.res
-else
-WIN32_ARG := 
-RC_C :=
-RC_D :=
-RC_F :=
-endif
-DEBUG_GENERATE =
-PDB_GENERATE =
-NDK_DEBUG =
+CXXFLAGS?=
+LDFLAGS?=
+NDK_BUILD ?= ndk-build
 
+# Append dash
+ifdef PREFIX
+xPREFIX = $(PREFIX)-
+endif
+
+# Check if we are compiling for Windows
+ifeq ($(OS),Windows_NT)
+# However, if PREFIX is set, it's possible that we are cross-compiling, so don't set it if prefix is set
+ifndef PREFIX
+RC_CMD := windres -O coff VersionInfo.rc VersionInfo.res
+RC_FILE := VersionInfo.res
+else
+ifneq (,$(findstring mingw32,$(PREFIX)))
+RC_CMD := $(xPREFIX)windres -O coff VersionInfo.rc VersionInfo.res
+RC_FILE := VersionInfo.res
+else
+RC_CMD :=
+RC_FILE :=
+endif
+endif
+else
+ifneq (,$(findstring mingw32,$(PREFIX)))
+RC_CMD := $(xPREFIX)windres -O coff VersionInfo.rc VersionInfo.res
+RC_FILE := VersionInfo.res
+# MinGW32 Cross compiler doesn't automatically append .exe
+EXTENSION_APPEND := .exe
+else
+RC_CMD :=
+RC_FILE :=
+endif
+endif
+
+# Debug flags
+RELEASE_GCC_CMD := -O3
+RELEASE_MSV_CMD := -Ox -MT
+DEBUG_GCC_CMD :=
+DEBUG_MSV_CMD :=
+NDK_DEBUG :=
+
+# Files
+GCC_FILES=JP_Decrypter.o V2_Decrypter.o HonokaMiku.o
+MSVC_FILES=JP_Decrypter.obj V2_Decrypter.obj HonokaMiku.obj VersionInfo.res
+
+# Rules
 all: honokamiku
 
-honokamiku:
-	-mkdir -p bin/honokamiku
-	$(RC_C)
-	g++ -O3 -o ./bin/honokamiku/HonokaMiku -pie -fPIE $(DEBUG_GENERATE) $(WIN32_ARG) $(CFLAGS) src/*.cc $(RC_F)
-	$(RC_D)
-
-static_link:
-	-mkdir -p bin/static_link
-	$(RC_C)
-	g++ -static-libgcc -static-libstdc++ -pie -fPIE $(DEBUG_GENERATE) -O3 -o ./bin/static_link/HonokaMiku $(WIN32_ARG) $(CFLAGS) src/*.cc $(RC_F)
-	$(RC_D)
-
-ifeq ($(VSINSTALLDIR),)
-vscmd:
-	@echo Error: Run \"make vscmd\" from Visual Studio command prompt
-	@exit 1
-else
-vscmd:
-	-mkdir -p bin/vscmd
-	cl -W3 -Zc:wchar_t -Ox -D"WIN32" -D_CONSOLE -EHsc -MT -wd"4996" -c src\\*.cc
-	rc -v -l 0 VersionInfo.rc
-	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -MANIFEST -NXCOMPAT $(PDB_GENERATE) -RELEASE -SUBSYSTEM:CONSOLE *.obj VersionInfo.res
-	rm *.obj VersionInfo.res
-endif
-
 debug:
-	$(eval PDB_GENERATE = -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG)
-	$(eval DEBUG_GENERATE = -g)
+	@echo Debug build.
+	$(eval RELEASE_GCC_CMD = -O0)
+	$(eval RELEASE_MSV_CMD = -Od -D"_DEBUG" -MTd)
+	$(eval DEBUG_GCC_CMD = -g -D_DEBUG)
+	$(eval DEBUG_MSV_CMD = -PDB:"bin\\vscmd\\HonokaMiku.pdb" -DEBUG)
 	$(eval NDK_DEBUG = NDK_DEBUG=1)
+
+honokamiku: $(GCC_FILES)
+	-mkdir -p bin/honokamiku
+	$(RC_CMD)
+	$(xPREFIX)g++ $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) -o bin/honokamiku/HonokaMiku$(EXTENSION_APPEND) $(CXXFLAGS) $(LDFLAGS) $(GCC_FILES) $(RC_FILE)
+	-rm $(GCC_FILES) $(RC_FILE)
 
 ndk:
 	-mkdir -p bin/jni/{arm64-v8a,armeabi{,-v7a},mips{,64},x86{,_64}}{,/stripped}
@@ -60,16 +76,46 @@ ndk:
 	done
 	rm -R obj
 	rm -R libs
-	#-find bin/jni/ -type d -empty -delete	#Throws error when using Command Prompt directly to build (without Cygwin)
+
+ifeq ($(VSINSTALLDIR),)
+vscmd:
+	@echo "Run from Visual Studio command prompt!"
+	@false
+else
+vscmd: $(MSVC_FILES)
+	-mkdir -p bin/vscmd
+	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -NXCOMPAT $(DEBUG_MSV_CMD) -RELEASE -SUBSYSTEM:CONSOLE $(LDFLAGS) $(MSVC_FILES)
+	-rm $(MSVC_FILES)
+endif
 
 clean:
-	-rm -R bin
-	-rm -R obj
-	-rm -R libs
-	-rm *.o *.obj VersionInfo.res
+	-@rm $(GCC_FILES) $(MSVC_FILES) $(RC_FILE)
+	-@rm -R obj
+	-@rm -R libs
 
-# Install needs to be root(sudo su)
-install:
-	install ./bin/honokamiku/HonokaMiku /usr/local/bin
+# Object files
+# .o for GCC
+# .obj for MSVC
 
-.PHONY: all honokamiku static_link vscmd debug ndk clean
+JP_Decrypter.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/JP_Decrypter.cc
+
+JP_Decrypter.obj:
+	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/JP_Decrypter.cc
+
+V2_Decrypter.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/V2_Decrypter.cc
+
+V2_Decrypter.obj:
+	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/V2_Decrypter.cc
+
+HonokaMiku.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/HonokaMiku.cc
+
+HonokaMiku.obj:
+	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/HonokaMiku.cc
+
+VersionInfo.res:
+	rc -v -l 0 VersionInfo.rc
+
+.PHONY: all honokamiku debug ndk vscmd clean
