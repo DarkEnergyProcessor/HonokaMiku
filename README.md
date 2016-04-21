@@ -1,7 +1,5 @@
 #Project HonokaMiku
 Universal Love Live! School Idol Festival game files decrypter/decoder. Written by [/u/AuahDark](http://www.reddit.com/user/AuahDark).
 
-C++ code located in `cpp_src` folder.  
-**C# code coming soon**
-
-Video that show this program in action can be found [here](https://www.youtube.com/watch?v=FR65z4jvs7Q). The video is likely outdated (still uses the prototype) but it should be same.
+This is original, C++03 implementation of HonokaMiku. The source code is located in `src` folder.  
+Don't have C++ compiler? No problem. [Click here](https://bitbucket.org/AuahDark/honokamiku_c89) for HonokaMiku written in C89.
