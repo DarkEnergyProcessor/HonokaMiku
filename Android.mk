@@ -8,7 +8,6 @@ LOCAL_MODULE := HonokaMiku
 LOCAL_SRC_FILES := $(wildcard src/*.cc)
 LOCAL_CPPFLAGS := -fexceptions
 LOCAL_LDLIBS := -L$(SYSROOT)/usr/lib
-LOCAL_CFLAGS += -fPIE
-LOCAL_LDFLAGS += -fPIE -pie
+LOCAL_LDFLAGS += -fPIC -pie -Wl,-E
 
 include $(BUILD_EXECUTABLE)

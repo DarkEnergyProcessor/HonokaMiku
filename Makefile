@@ -47,8 +47,8 @@ DEBUG_MSV_CMD :=
 NDK_DEBUG :=
 
 # Files
-GCC_FILES=JP_Decrypter.o V2_Decrypter.o HonokaMiku.o
-MSVC_FILES=JP_Decrypter.obj V2_Decrypter.obj HonokaMiku.obj VersionInfo.res
+GCC_FILES=JP_Decrypter.o V2_Decrypter.o Helper.o HonokaMiku.o
+MSVC_FILES=JP_Decrypter.obj V2_Decrypter.obj Helper.obj HonokaMiku.obj VersionInfo.res
 
 # Rules
 all: honokamiku
@@ -64,7 +64,7 @@ debug:
 honokamiku: $(GCC_FILES)
 	-mkdir -p bin/honokamiku
 	$(RC_CMD)
-	$(xPREFIX)g++ $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) -o bin/honokamiku/HonokaMiku$(EXTENSION_APPEND) $(CXXFLAGS) $(LDFLAGS) $(GCC_FILES) $(RC_FILE)
+	$(xPREFIX)g++ $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) -fPIC -pie -o bin/honokamiku/HonokaMiku$(EXTENSION_APPEND) $(CXXFLAGS) $(LDFLAGS) $(GCC_FILES) $(RC_FILE) -Wl,-E
 	-rm $(GCC_FILES) $(RC_FILE)
 
 ndk:
@@ -77,16 +77,16 @@ ndk:
 	rm -R obj
 	rm -R libs
 
-ifeq ($(VSINSTALLDIR),)
-vscmd:
-	@echo "Run from Visual Studio command prompt!"
-	@false
-else
-vscmd: $(MSVC_FILES)
+prevscmd:
+	@echo "VSCMD build verify"
+	where cl.exe
+	where link.exe
+
+vscmd: prevscmd $(MSVC_FILES)
 	-mkdir -p bin/vscmd
 	link -OUT:"bin\\vscmd\\HonokaMiku.exe" -NXCOMPAT $(DEBUG_MSV_CMD) -RELEASE -SUBSYSTEM:CONSOLE $(LDFLAGS) $(MSVC_FILES)
 	-rm $(MSVC_FILES)
-endif
+
 
 clean:
 	-@rm $(GCC_FILES) $(MSVC_FILES) $(RC_FILE)
@@ -115,7 +115,13 @@ HonokaMiku.o:
 HonokaMiku.obj:
 	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/HonokaMiku.cc
 
+Helper.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/Helper.cc
+
+Helper.obj:
+	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/Helper.cc
+
 VersionInfo.res:
 	rc -v -l 0 VersionInfo.rc
 
-.PHONY: all honokamiku debug ndk vscmd clean
+.PHONY: all honokamiku debug ndk prevscmd vscmd clean
