@@ -310,12 +310,6 @@ void check_args(char* argv[])
 		
 		exit(EINVAL);
 	}
-	else if(g_DecryptGame>0 && g_XEncryptGame == g_DecryptGame)
-	{
-		fputs("Do nothing\n\n", stderr);
-
-		exit(0);
-	}
 }
 
 int main(int argc, char* argv[])
@@ -329,6 +323,7 @@ int main(int argc, char* argv[])
 	char* _reserved_memory = new char[2*1024*1024];	// 2 MB of memory. If we're running out of memory, delete this.
 	size_t file_contents_length = 0;		// This is the file size
 	size_t file_contents_size = 4096;		// This is the memory size
+	size_t header_size = 4;					// Used on encrypt mode
 	int last_errno = 0;
 
 	// Get program basename
@@ -481,10 +476,29 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	
 	// Decrypt/encrypt routines
 	{
+		HonokaMiku::Dctx* cross_dctx = NULL;
 		static const size_t chunk_size = 4096;		// Edit if necessary
 		unsigned char* byte_buffer;
+
+		if(g_XEncryptGame > 0)
+		{
+			fprintf(stderr, "Cross-encrypt to: %s", gameid_to_string(g_XEncryptGame));
+
+			if(g_XEncryptGame == g_DecryptGame)
+			{
+				fputs(" (no operation)\n", stderr);
+				goto cleanup;
+			}
+
+			fputc('\n', stderr);
+
+			g_Encrypt = true;
+			cross_dctx = HonokaMiku::EncryptPrepare(g_XEncryptGame, g_Basename, header_buffer);
+
+		}
 
 		try
 		{
@@ -516,9 +530,21 @@ int main(int argc, char* argv[])
 				free_size = file_contents_size - file_contents_length;
 			}
 
+			if(cross_dctx)
+				// XORing with cross-encrypted first.
+				// When the real Dctx reaches, it will result in expected cross-encrypted game file
+				cross_dctx->decrypt_block(byte_buffer, read_bytes);
+
 			dctx->decrypt_block(file_contents + file_contents_length, byte_buffer, read_bytes);
 
 			file_contents_length += read_bytes;
+		}
+
+		if(cross_dctx)
+		{
+			// Swap decrypter context
+			delete dctx;
+			dctx = cross_dctx;
 		}
 	}
 
@@ -541,8 +567,6 @@ int main(int argc, char* argv[])
 	}
 
 	// If we're encrypting, write header first
-	size_t header_size = 4;
-
 	if(g_Encrypt)
 	{
 
@@ -564,6 +588,8 @@ int main(int argc, char* argv[])
 	{
 		goto write_error;
 	}
+
+	cleanup:
 
 	fclose(file_stream);
 	free(file_contents);

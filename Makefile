@@ -101,25 +101,25 @@ JP_Decrypter.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/JP_Decrypter.cc
 
 JP_Decrypter.obj:
-	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/JP_Decrypter.cc
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/JP_Decrypter.cc
 
 V2_Decrypter.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/V2_Decrypter.cc
 
 V2_Decrypter.obj:
-	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/V2_Decrypter.cc
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/V2_Decrypter.cc
 
 HonokaMiku.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/HonokaMiku.cc
 
 HonokaMiku.obj:
-	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/HonokaMiku.cc
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/HonokaMiku.cc
 
 Helper.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/Helper.cc
 
 Helper.obj:
-	cl -nologo -W3 -Zc:wchar_t $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/Helper.cc
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/Helper.cc
 
 VersionInfo.res:
 	rc -v -l 0 VersionInfo.rc
