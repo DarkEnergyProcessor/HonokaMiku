@@ -11,6 +11,10 @@
 #include <cstdio>
 #include <cstdlib>
 
+#ifdef WIN32
+#include <io.h>
+#endif
+
 #include "DecrypterContext.h"
 #include "CompilerName.h"
 #include "../VersionInfo.rc"
@@ -49,7 +53,7 @@ static char usage_string[] =
 	"<input file> and [output file] can be - for stdin and stdout.\n"
 	"\nOptions:\n"
 	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
-	" --basename<name>          key.\n"
+	" --basename<name>          key. Required if reading from stdin.\n"
 	"\n"
 	" -c                        Assume <input file> is SIF CN game file.\n"
 	" --sif-cn\n"
@@ -294,7 +298,16 @@ void check_args(char* argv[])
 
 	// Check basename
 	if((g_Basename != NULL && strlen(g_Basename)==0) || g_Basename == NULL)
+	{
+		if(memcmp(argv[g_InPos], "-", 2) == 0)
+		{
+			fputs("Error: basename must be specificed when reading from stdin\n\n", stderr);
+			fprintf(stderr, usage_string, g_ProgramName);
+
+			exit(EINVAL);
+		}
 		g_Basename = __DctxGetBasename(argv[g_InPos]);
+	}
 
 	if(g_Encrypt && g_DecryptGame == 0)
 	{
@@ -329,6 +342,12 @@ int main(int argc, char* argv[])
 	// Get program basename
 	g_ProgramName = __DctxGetBasename(argv[0]);
 
+	// Set mode to binary
+#ifdef WIN32
+	_setmode(0, 0x8000);	// stdin
+	_setmode(1, 0x8000);	// stdout
+#endif
+
 	fputs("HonokaMiku. Universal LL!SIF game files decrypter\n", stderr);
 
 	if(argc < 2)
@@ -362,6 +381,7 @@ int main(int argc, char* argv[])
 
 	if(g_TestMode)
 	{
+		char expected = g_DecryptGame;
 		fputs("Detecting: ", stderr);
 
 		if(fread(header_buffer, 1, 4, file_stream) != 4)
@@ -375,12 +395,25 @@ int main(int argc, char* argv[])
 
 		dctx = HonokaMiku::FindSuitable(g_Basename, header_buffer, &g_DecryptGame);
 
+		delete[] _reserved_memory;
+
 		if (dctx == NULL)
+		{
 			fputs("Unknown\n", stderr);
+
+			if(expected > 0) return (-1);
+		}
 		else
+		{
 			fprintf(stderr, "%s\n", gameid_to_string(g_DecryptGame));
 
-		delete[] _reserved_memory;
+			if(expected > 0)
+			{
+				fprintf(stderr, "Expected: %s\n", gameid_to_string(expected));
+
+				return expected == g_DecryptGame ? 0 : (-1);
+			}
+		}
 
 		return 0;
 	}

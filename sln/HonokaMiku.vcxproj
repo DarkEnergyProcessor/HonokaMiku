@@ -90,6 +90,8 @@
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <DisableLanguageExtensions>true</DisableLanguageExtensions>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -106,6 +108,8 @@
       <DisableLanguageExtensions>true</DisableLanguageExtensions>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,10 +127,12 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
       <DisableLanguageExtensions>true</DisableLanguageExtensions>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -146,10 +152,12 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
       <DisableLanguageExtensions>true</DisableLanguageExtensions>
       <StructMemberAlignment>16Bytes</StructMemberAlignment>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <StringPooling>true</StringPooling>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
