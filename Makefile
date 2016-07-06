@@ -64,7 +64,7 @@ debug:
 honokamiku: $(GCC_FILES)
 	-mkdir -p bin/honokamiku
 	$(RC_CMD)
-	$(xPREFIX)g++ $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) -fPIC -pie -o bin/honokamiku/HonokaMiku$(EXTENSION_APPEND) $(CXXFLAGS) $(LDFLAGS) $(GCC_FILES) $(RC_FILE) -Wl,-E
+	$(xPREFIX)g++ $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) -o bin/honokamiku/HonokaMiku$(EXTENSION_APPEND) $(CXXFLAGS) $(LDFLAGS) $(GCC_FILES) $(RC_FILE)
 	-rm $(GCC_FILES) $(RC_FILE)
 
 ndk:
