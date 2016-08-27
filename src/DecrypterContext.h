@@ -24,7 +24,7 @@ namespace HonokaMiku
 		/// Variable to track current position. Needed to allow jump to specific-position
 		uint32_t pos;
 		/// Values to use when XOR-ing bytes
-		uint16_t xor_key;
+		uint32_t xor_key;
 		/// Decrypter version. JP Decrypt sets this to `3` while others sets this to `2`.
 		uint8_t version;
 		/// \brief XOR block of memory
@@ -51,7 +51,7 @@ namespace HonokaMiku
 		/// \param block_rest The next 12-bytes header of Version 3 encrypted file.
 		virtual void final_setup(const char* filename, const void* block_rest) = 0;
 	protected:
-		DecrypterContext() {}
+		inline DecrypterContext() {}
 		/// The key update function. Used to update the key. Used internally and protected
 		virtual void update() = 0;
 	};
@@ -60,13 +60,13 @@ namespace HonokaMiku
 	void setupEncryptV2(DecrypterContext* dctx, const char* prefix, const char* filename, void* hdr_out);
 
 	/// Japanese SIF decrypter context
-	class JP_Dctx:public DecrypterContext
+	class JP_Dctx: public DecrypterContext
 	{
 	protected:
 		/// Value to check if the decrypter context is already finalized
 		bool is_finalized;
 
-		JP_Dctx() {}
+		inline JP_Dctx() {}
 		void update();
 	public:
 		/// \brief Initialize SIF JP decrypter context
@@ -85,14 +85,33 @@ namespace HonokaMiku
 		static JP_Dctx* encrypt_setup(const char* filename, void* hdr_out);
 	};
 
-	/// Base class of Version 2 decrypter
-	class V2_Dctx:public DecrypterContext {
+	/// Base class of Version 1 decrypter/encrypter
+	class V1_Dctx: public DecrypterContext
+	{
 	protected:
-		V2_Dctx() {}
+		inline V1_Dctx() {}
+		void update();
+	public:
+		/// \brief Initialize Version 1 decrypter context
+		/// \param key_prefix String prepended before MD5 calculation
+		/// \param filename File name that want to be decrypted.
+		V1_Dctx(const char* key_prefix, const char* filename);
+		void decrypt_block(void* buffer, uint32_t len);
+		void decrypt_block(void* dest, const void* src, uint32_t len);
+		void goto_offset(uint32_t offset);
+		void goto_offset_relative(int32_t offset);
+		inline void final_setup(const char* filename, const void* rest_block) {}
+	};
+
+	/// Base class of Version 2 decrypter
+	class V2_Dctx: public DecrypterContext
+	{
+	protected:
+		inline V2_Dctx() {}
 		V2_Dctx(const char* prefix, const void* header, const char* filename);
 		void update();
 	public:
-		void decrypt_block(void* buffer,uint32_t len);
+		void decrypt_block(void* buffer, uint32_t len);
 		void decrypt_block(void* dest, const void* src, uint32_t len);
 		void goto_offset(uint32_t offset);
 		void goto_offset_relative(int32_t offset);
@@ -169,7 +188,7 @@ namespace HonokaMiku
 	};
 
 	/// Simplified Chinese SIF decrypter context.
-	/// It has longest prefix key currently in Version 2 decrypter
+	/// It has longest prefix key currently
 	class CN_Dctx:public V2_Dctx
 	{
 	protected:
@@ -215,6 +234,21 @@ namespace HonokaMiku
 	/// \param header_out Pointer to store the file header. The memory size should be 16-bytes
 	///                   to reserve space for Version 3 decrypter.
 	DecrypterContext* EncryptPrepare(char game_id, const char* filename, void* header_out);
+
+	/// \brief Gets game key prefix for specificed game id.
+	/// \param game_id The game ID.
+	inline const char* GetPrefixFromGameId(char game_id)
+	{
+		switch(game_id)
+		{
+			case 1: return "BFd3EnkcKa";
+			case 2:
+			case 4: return "Hello";
+			case 3: return "M2o2B7i3M6o6N88";
+			case 5: return "iLbs0LpvJrXm3zjdhAr4";
+			default: return NULL;
+		}
+	}
 }
 
 // Inline function to retrieve the basename
