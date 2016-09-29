@@ -85,6 +85,31 @@ namespace HonokaMiku
 		static JP_Dctx* encrypt_setup(const char* filename, void* hdr_out);
 	};
 
+	class EN_Dctx : public DecrypterContext
+	{
+	protected:
+		/// Value to check if the decrypter context is already finalized
+		bool is_finalized;
+
+		inline EN_Dctx() {}
+		void update();
+	public:
+		/// \brief Initialize SIF EN decrypter context
+		/// \param header The first 4-bytes contents of the file
+		/// \param filename File name that want to be decrypted. This affects the key calculation.
+		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
+		EN_Dctx(const void* header, const char* filename);
+		void decrypt_block(void* buffer, uint32_t len);
+		void decrypt_block(void* dest, const void* src, uint32_t len);
+		void goto_offset(uint32_t offset);
+		void goto_offset_relative(int32_t offset);
+		void final_setup(const char* filename, const void* block_rest);
+		/// \brief Creates SIF EN decrypter context specialized for encryption.
+		/// \param filename File name that want to be encrypted. This affects the key calculation.
+		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
+		static EN_Dctx* encrypt_setup(const char* filename, void* hdr_out);
+	};
+
 	/// Base class of Version 1 decrypter/encrypter
 	class V1_Dctx: public DecrypterContext
 	{
@@ -118,28 +143,6 @@ namespace HonokaMiku
 		inline void final_setup(const char* filename, const void* rest_block)
 		{
 			// Do nothing for Version2 in here
-		}
-	};
-
-	/// International SIF decrypter context
-	class EN_Dctx:public V2_Dctx
-	{
-	protected:
-		EN_Dctx():V2_Dctx() {}
-	public:
-		/// \brief Initialize SIF EN decrypter context
-		/// \param header The first 4-bytes contents of the file
-		/// \param filename File name that want to be decrypted. This affects the key calculation.
-		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
-		EN_Dctx(const void* header, const char* filename):V2_Dctx("BFd3EnkcKa", header, filename) {}
-		/// \brief Creates SIF EN decrypter context specialized for encryption.
-		/// \param filename File name that want to be encrypted. This affects the key calculation.
-		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
-		inline static EN_Dctx* encrypt_setup(const char* filename, void* hdr_out)
-		{
-			EN_Dctx* dctx = new EN_Dctx();
-			setupEncryptV2(dctx, "BFd3EnkcKa", filename, hdr_out);
-			return dctx;
 		}
 	};
 
