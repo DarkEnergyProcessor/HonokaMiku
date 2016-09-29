@@ -1,5 +1,10 @@
+libs/*
+obj/*
 bin/*
 sln/*
+src/*
 !sln/HonokaMiku.sln
 !sln/HonokaMiku.vcxproj
 !sln/HonokaMiku.vcxproj.filter
+!src/*.cc
+!src/*.h

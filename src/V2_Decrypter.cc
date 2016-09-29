@@ -155,7 +155,7 @@ inline void HonokaMiku::V2_Dctx::update()
 	xor_key = ((b >> 23) & 0xFF) | ((b >> 7) & 0xFF00);
 }
 
-void HonokaMiku::setupEncryptV2(DecrypterContext* dctx,const char* prefix,const char* filename,void* hdr_out)
+void HonokaMiku::setupEncryptV2(V2_Dctx* dctx,const char* prefix,const char* filename,void* hdr_out)
 {
 	MD5 mctx;
 	const char* basename = __DctxGetBasename(filename);

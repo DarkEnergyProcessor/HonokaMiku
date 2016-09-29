@@ -56,6 +56,13 @@ static char usage_string[] =
 	" --olddecrypt              Also needs one of the game file flag\n"
 	"                           to be set. Encryption mode will be\n"
 	"                           ignored if this option is set.\n"
+	"                           New decrypt option can't be specificed\n"
+	"                           if this option is specificed.\n"
+	"\n"
+	" -3                        Select version 3 algorithm to decrypt\n"
+	" --newdecrypt              or encrypt SIF EN or JP game files\n"
+	"                           Old decrypt option can't be specificed\n"
+	"                           if this option is specificed.\n"
 	"\n"
 	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
 	" --basename<name>          key. Required if reading from stdin.\n"
@@ -75,10 +82,7 @@ static char usage_string[] =
 	" --help\n"
 	"\n"
 	" -j                        Assume <input file> is SIF JP game file.\n"
-	" --sif-jp\n"
-	"\n"
-	" -k                        Assume <input file> is SIF KR game file.\n"
-	" --sif-kr\n"
+	" --sif-jp                  Defaults to version 2 algorithm.\n"
 	"\n"
 	" -t                        Assume <input file> is SIF TW game file.\n"
 	" --sif-tw\n"
@@ -87,11 +91,14 @@ static char usage_string[] =
 	" --version\n"
 	"\n"
 	" -w                        Assume <input file> is SIF EN game file.\n"
-	" --sif-en\n"
+	" --sif-en                  Defaults to version 2 algorithm.\n"
 	" --sif-ww\n"
 	"\n"
 	" -x<game>                  Cross-encrypt to another game file.\n"
-	" --cross-encrypt<game>     <game> can be w, j, t, k, or c\n"
+	" --cross-encrypt<game>     <game> can be w, j, t, or c\n"
+	"                           For SIF EN and JP (w and j), add\n"
+	"                           \"3\" after the code to use version\n"
+	"                           3 algorithm\n"
 	"\n";
 
 int g_InPos = 0;				// Input filename argv position
@@ -103,17 +110,26 @@ char g_XEncryptGame = 0;		// 0 = cross-encryption not specificed; 1 = ww/en; 2 =
 bool g_Encrypt = false;			// Encrypt mode?
 bool g_TestMode = false;		// Detect only.
 bool g_Version1 = false;		// Encrypt/decrypt version 1 game files (SIF v1.x)
+bool g_Version3 = false;		// Use version 3 algorithm
 
 char get_gametype(const char* a)
 {
-	if(msvcr110_strnicmp(a,"w",2)==0 || msvcr110_strnicmp(a,"sif-ww",7)==0 || msvcr110_strnicmp(a,"sif-en",7)==0)
+	if(a[0] == 'w')
+		if(a[1] == '3')
+			return 6;
+		else
+			return 1;
+	else if(msvcr110_strnicmp(a,"sif-ww",7)==0 || msvcr110_strnicmp(a,"sif-en",7)==0)
 		return 1;
-	else if(msvcr110_strnicmp(a,"j",2)==0 || msvcr110_strnicmp(a,"sif-jp",7)==0)
-		return 2;
+	else if(a[0] == 'j')
+		if(a[1] == '3')
+			return 2;
+		else
+			return 4;
+	else if(msvcr110_strnicmp(a,"sif-jp",7)==0)
+		return 4;
 	else if(msvcr110_strnicmp(a,"t",2)==0 || msvcr110_strnicmp(a,"sif-tw",7)==0)
 		return 3;
-	else if(msvcr110_strnicmp(a,"k",2)==0 || msvcr110_strnicmp(a,"sif-kr",7)==0)
-		return 4;
 	else if(msvcr110_strnicmp(a,"c",2)==0 || msvcr110_strnicmp(a,"sif-cn",7)==0)
 		return 5;
 	return 0;
@@ -124,15 +140,17 @@ const char* gameid_to_string(char gameid)
 	switch(gameid)
 	{
 		case 1:
-			return "EN game file";
+			return "EN (Version 2) game file";
 		case 2:
-			return "JP game file";
+			return "JP (Version 3) game file";
 		case 3:
 			return "TW game file";
 		case 4:
-			return "KR game file";
+			return "JP (Version 2) game file";
 		case 5:
 			return "CN game file";
+		case 6:
+			return "EN (Version 3) game file";
 		default:
 			return "Unknown";
 	}
@@ -168,9 +186,11 @@ void parse_args(int argc,char* argv[])
 					if(argv[i] == NULL)
 						fprintf(stderr, "Ignoring --cross-encrypt\n");
 					else
+					{
 						g_XEncryptGame = get_gametype(argv[i]);
 
-					if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring --cross-encrypt: Unknown game type %s\n", argv[i]);
+						if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring --cross-encrypt: Unknown game type %s\n", argv[i]);
+					}
 				}
 
 				else if(msvcr110_strnicmp(start_arg, "encrypt", 8) == 0)
@@ -185,20 +205,21 @@ void parse_args(int argc,char* argv[])
 					exit(0);
 				}
 
-				else if(msvcr110_strnicmp(start_arg, "olddecrypt", 4) == 0)
+				else if(msvcr110_strnicmp(start_arg, "newdecrypt", 10) == 0)
+					g_Version3 = true;
+
+				else if(msvcr110_strnicmp(start_arg, "olddecrypt", 10) == 0)
 					g_Version1 = true;
 
 				else if(msvcr110_strnicmp(start_arg, "sif-cn", 7) == 0)
 					g_DecryptGame = 5;
 
-				else if(msvcr110_strnicmp(start_arg, "sif-en", 7) == 0 || msvcr110_strnicmp(start_arg, "sif-ww", 6) == 0)
+				else if(msvcr110_strnicmp(start_arg, "sif-en", 7) == 0 ||
+					    msvcr110_strnicmp(start_arg, "sif-ww", 6) == 0)
 					g_DecryptGame = 1;
 				
 				else if(msvcr110_strnicmp(start_arg, "sif-jp", 7) == 0)
 					g_DecryptGame = 2;
-				
-				else if(msvcr110_strnicmp(start_arg, "sif-kr", 7) == 0)
-					g_DecryptGame = 4;
 				
 				else if(msvcr110_strnicmp(start_arg, "sif-tw", 7) == 0)
 					g_DecryptGame = 3;
@@ -218,6 +239,9 @@ void parse_args(int argc,char* argv[])
 			// Short argument name parse
 			else if(s == '1')
 				g_Version1 = true;
+
+			else if(s == '3')
+				g_Version3 = true;
 
 			else if(s == 'b')
 			{
@@ -249,9 +273,6 @@ void parse_args(int argc,char* argv[])
 
 			else if(s == 'j')
 				g_DecryptGame = 2;
-
-			else if(s == 'k')
-				g_DecryptGame = 4;
 			
 			else if(s == 't')
 				g_DecryptGame = 3;
@@ -270,6 +291,7 @@ void parse_args(int argc,char* argv[])
 
 			else if(s == 'x')
 			{
+				char* target = NULL;
 				if(argv[i][2] == 0)
 				{
 					i++;
@@ -277,11 +299,14 @@ void parse_args(int argc,char* argv[])
 					if(argv[i] == NULL)
 						fprintf(stderr, "Ignoring -x\n");
 					else
-						g_XEncryptGame = get_gametype(argv[i]);
+						g_XEncryptGame = get_gametype(target = argv[i]);
 				}
 				else
-					g_XEncryptGame = get_gametype(argv[i]+2);
-				if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring -x: Unknown game type %s\n", argv[i]+2);
+				{
+					g_XEncryptGame = get_gametype(target = argv[i] + 2);
+
+					if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring -x: Unknown game type %s\n", target);
+				}
 			}
 
 			else
@@ -321,6 +346,20 @@ void check_args(char* argv[])
 		g_Basename = __DctxGetBasename(argv[g_InPos]);
 	}
 
+	if(g_Version3)
+	{
+		if(g_DecryptGame == 1)
+			g_DecryptGame = 6;
+		else if(g_DecryptGame > 2)
+		{
+			fputs("Warning: specificed game file does not support version 3 algorithm\n", stderr);
+			g_Version3 = false;
+		}
+	}
+	else
+		if(g_DecryptGame == 2)
+			g_DecryptGame = 4;
+
 	if(g_Version1 && g_DecryptGame == 0)
 	{
 		fputs("Error: version 1 decryption requires game file switch\n\n", stderr);
@@ -342,7 +381,15 @@ void check_args(char* argv[])
 		
 		exit(EINVAL);
 	}
-	else if(g_Encrypt && g_Version1)
+	else if(g_Version1 && g_Version3)
+	{
+		fputs("Error: --olddecrypt and --newdecrypt both can't be specificed\n\n", stderr);
+		fprintf(stderr, usage_string, g_ProgramName);
+
+		exit(EINVAL);
+	}
+
+	if(g_Encrypt && g_Version1)
 	{
 		fputs("Warning: encrypt mode option ignored\n", stderr);
 		g_Encrypt = false;
@@ -532,9 +579,7 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "%s\n", gameid_to_string(g_DecryptGame));
 
 			if(dctx->version == 3)
-			{
 				goto version3_finalize_setup;
-			}
 		}
 	}
 
@@ -549,9 +594,7 @@ int main(int argc, char* argv[])
 		{
 			fprintf(stderr, "Cross-encrypt to: %s", gameid_to_string(g_XEncryptGame));
 
-			if(g_XEncryptGame == g_DecryptGame ||
-			   (g_Version1 && (g_DecryptGame == 2 && g_XEncryptGame == 4) || (g_DecryptGame == 4 && g_XEncryptGame == 2))
-			)
+			if(g_XEncryptGame == g_DecryptGame)
 			{
 				fputs(" (no operation)\n", stderr);
 				goto cleanup;
