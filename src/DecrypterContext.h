@@ -61,7 +61,7 @@ namespace HonokaMiku
 	/// For encrypt_setup static members for SIF EN, TW, KR, and CN. Used internally
 	void setupEncryptV2(V2_Dctx* dctx, const char* prefix, const char* filename, void* hdr_out);
 	/// For encrypt_setup static members for SIF JP and EN (Version 3). Used internally
-	void setupEncryptV3(V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, const char* filename, void* hdr_out);
+	void setupEncryptV3(V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, unsigned short name_sum_base, const char* filename, void* hdr_out);
 	/// To finalize version 3 decrypter
 	void finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, const char* filename, const void* block_rest);
 
@@ -121,8 +121,8 @@ namespace HonokaMiku
 		static V3_Dctx* encrypt_setup(const char* prefix, const unsigned int* key_tables, const char* filename, void* hdr_out);
 		virtual void final_setup(const char* , const void* ) = 0;
 
-		friend void setupEncryptV3(V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, const char* filename, void* hdr_out);
-		friend void finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, const char* filename, const void* block_rest);
+		friend void setupEncryptV3(V3_Dctx* , const char* , const unsigned int* , unsigned short , const char* , void* );
+		friend void finalDecryptV3(V3_Dctx* , unsigned int , const char* , const void* );
 	};
 
 	/// Japanese SIF decrypter context
@@ -206,7 +206,7 @@ namespace HonokaMiku
 	};
 
 	/// SIF JP decrypter version 2
-	class JP2_Dctx:public V2_Dctx
+	class JP2_Dctx: public V2_Dctx
 	{
 	protected:
 		JP2_Dctx():V2_Dctx() {}
@@ -229,7 +229,7 @@ namespace HonokaMiku
 
 	/// Simplified Chinese SIF decrypter context.
 	/// It has longest prefix key currently
-	class CN_Dctx:public V2_Dctx
+	class CN_Dctx: public V2_Dctx
 	{
 	protected:
 		CN_Dctx():V2_Dctx() {}
@@ -255,7 +255,7 @@ namespace HonokaMiku
 	typedef EN3_Dctx WW3_Dctx;
 	typedef JP2_Dctx KR_Dctx;
 
-	// Helper functions. GameID is used for libhonoka backward compatibility
+	// Helper functions.
 
 	/// \brief Creates decrypter context based from the given headers.
 	///        Returns decrypter context or NULL if no suitable decryption method is available.

@@ -64,13 +64,13 @@ void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, c
 	}
 }
 
-void HonokaMiku::setupEncryptV3(HonokaMiku::V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, const char* filename, void* hdr_out)
+void HonokaMiku::setupEncryptV3(HonokaMiku::V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, unsigned short name_sum_base, const char* filename, void* hdr_out)
 {
 	MD5 mctx;
 	const char* basename=__DctxGetBasename(filename);
 	uint8_t hdr_create[16];
 	uint8_t digcopy[3];
-	uint16_t key_picker=500;
+	uint16_t key_picker=name_sum_base;
 
 	mctx.Init();
 	mctx.Update(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));

@@ -34,6 +34,6 @@ void HonokaMiku::JP3_Dctx::final_setup(const char* filename, const void* block_r
 HonokaMiku::JP3_Dctx* HonokaMiku::JP3_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 {
 	JP3_Dctx* dctx = new JP3_Dctx;
-	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(2), jp_key_tables, filename, hdr_out);
+	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(2), jp_key_tables, 500, filename, hdr_out);
 	return dctx;
 }
