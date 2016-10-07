@@ -47,6 +47,7 @@ void HonokaMiku::V2_Dctx::decrypt_block(void* b, uint32_t size)
 		file_buffer[0] ^= xor_key >> 8;
 		file_buffer++;
 		size--;
+		pos++;
 
 		update();
 	}
@@ -69,14 +70,15 @@ void HonokaMiku::V2_Dctx::decrypt_block(void* _d, const void* _s, uint32_t size)
 {
 	if (size == 0) return;
 	
-	const uint8_t* file_buffer = reinterpret_cast<const uint8_t*>(_s);
-	uint8_t* out_buffer = reinterpret_cast<uint8_t*>(_d);
+	const char* file_buffer = reinterpret_cast<const char*>(_s);
+	char* out_buffer = reinterpret_cast<char*>(_d);
 	if(pos%2 == 1)
 	{
 		out_buffer[0] = file_buffer[0] ^ (xor_key >> 8);
 		file_buffer++;
 		out_buffer++;
 		size--;
+		pos++;
 
 		update();
 	}
