@@ -4,7 +4,9 @@
 **/
 
 #include <stdint.h>
-
+#include <string>
+#include <sstream>
+#include <iostream>
 #include <exception>
 #include <stdexcept>
 #include <cstring>
