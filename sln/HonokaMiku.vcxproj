@@ -167,6 +167,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\CN_Decrypter.cc" />
     <ClCompile Include="..\src\EN_Decrypter.cc" />
     <ClCompile Include="..\src\Helper.cc" />
     <ClCompile Include="..\src\HonokaMiku.cc" />

@@ -96,6 +96,12 @@ clean:
 # Object files
 # .o for GCC
 # .obj for MSVC
+CN_Decrypter.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/CN_Decrypter.cc
+
+CN_Decrypter.obj:
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/CN_Decrypter.cc
+
 EN_Decrypter.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/EN_Decrypter.cc
 
