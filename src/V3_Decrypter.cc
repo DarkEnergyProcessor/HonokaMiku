@@ -9,6 +9,11 @@
 #include <stdexcept>
 #include <cstring>
 
+// Mac OS fix
+#include <string>
+#include <sstream>
+#include <iostream>
+
 #include "DecrypterContext.h"
 #include "md5.h"
 

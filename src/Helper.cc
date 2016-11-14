@@ -53,11 +53,19 @@ HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, con
 					{
 						try
 						{
-							dctx = new CN_Dctx(header, filename);
+							dctx = new CN2_Dctx(header, filename);
 							*game_type = 5;
 						}
 						catch(std::runtime_error)
 						{
+							try
+							{
+								dctx = new CN3_Dctx(header, filename);
+								*game_type = 7;
+							}
+							catch(std::runtime_error)
+							{
+							}
 						}
 					}
 				}
@@ -83,9 +91,11 @@ HonokaMiku::DecrypterContext* HonokaMiku::CreateFrom(char game_id, const void* h
 			case 4:
 				return new JP2_Dctx(header, filename);
 			case 5:
-				return new CN_Dctx(header, filename);
+				return new CN2_Dctx(header, filename);
 			case 6:
 				return new EN3_Dctx(header, filename);
+			case 7:
+				return new CN3_Dctx(header, filename);
 			default:
 				return NULL;
 		}
@@ -109,9 +119,11 @@ HonokaMiku::DecrypterContext* HonokaMiku::EncryptPrepare(char game_id, const cha
 		case 4:
 			return JP2_Dctx::encrypt_setup(filename, header_out);
 		case 5:
-			return CN_Dctx::encrypt_setup(filename, header_out);
+			return CN2_Dctx::encrypt_setup(filename, header_out);
 		case 6:
 			return EN3_Dctx::encrypt_setup(filename, header_out);
+		case 7:
+			return CN3_Dctx::encrypt_setup(filename, header_out);
 		default:
 			return NULL;
 	}

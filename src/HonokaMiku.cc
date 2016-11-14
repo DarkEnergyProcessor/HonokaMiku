@@ -19,8 +19,7 @@
 #include "CompilerName.h"
 #include "../VersionInfo.rc"
 
-// Actually this is `strnicmp` implementation in MSVCRT v110
-// Copyright Microsoft Corporation.
+// Copied from MSVC strnicmp.c
 int msvcr110_strnicmp (const char * first, const char * last, size_t count)
 {
     if(count)
@@ -62,8 +61,8 @@ static char usage_string[] =
 	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
 	" --basename<name>          key. Required if reading from stdin.\n"
 	"\n"
-	" -c                        Assume <input file> is SIF CN game file.\n"
-	" --sif-cn\n"
+	" -c[3]                     Assume <input file> is SIF CN game file.\n"
+	" --sif-cn[-v3]"
 	"\n"
 	" -d                        Detect game file type only. [output file]\n"
 	" --detect                  and the other parameters is omitted.\n"
@@ -116,10 +115,12 @@ char get_gametype(const char* a)
 		return 4;
 	else if(msvcr110_strnicmp(a, "j3", 3) == 0 || msvcr110_strnicmp(a, "sif-jp-v3", 10) == 0)
 		return 2;
-	else if(msvcr110_strnicmp(a,"t",2)==0 || msvcr110_strnicmp(a,"sif-tw",7)==0)
+	else if(msvcr110_strnicmp(a, "t", 2) == 0 || msvcr110_strnicmp(a, "sif-tw", 7) == 0)
 		return 3;
-	else if(msvcr110_strnicmp(a,"c",2)==0 || msvcr110_strnicmp(a,"sif-cn",7)==0)
+	else if(msvcr110_strnicmp(a, "c", 2) == 0 || msvcr110_strnicmp(a, "sif-cn", 7) == 0)
 		return 5;
+	else if(msvcr110_strnicmp(a, "c3", 3) == 0 || msvcr110_strnicmp(a, "sif-cn-v3", 10) == 0)
+		return 7;
 	return 0;
 }
 
@@ -136,9 +137,11 @@ const char* gameid_to_string(char gameid)
 		case 4:
 			return "JP (Version 2) game file";
 		case 5:
-			return "CN game file";
+			return "CN (Version 2) game file";
 		case 6:
 			return "EN (Version 3) game file";
+		case 7:
+			return "CN (Version 3) game file";
 		default:
 			return "Unknown";
 	}
@@ -157,6 +160,7 @@ const char* gameid_to_string_v1(char gameid)
 		case 3:
 			return "TW game file";
 		case 5:
+		case 7:
 			return "CN game file";
 		default:
 			return "Unknown";
@@ -244,7 +248,10 @@ void parse_args(int argc,char* argv[])
 					g_Basename = argv[i] + 2;
 			}
 			else if(s == 'c')
-				g_DecryptGame = 5;
+				if(argv[i][2] == '3')
+					g_DecryptGame = 7;
+				else
+					g_DecryptGame = 5;
 
 			else if(s == 'd')
 				g_TestMode = true;

@@ -161,6 +161,24 @@ namespace HonokaMiku
 		void final_setup(const char* filename, const void* block_rest);
 	};
 
+	/// Chinese SIF decrypter context (Version 3)
+	class CN3_Dctx: public V3_Dctx
+	{
+	protected:
+		inline CN3_Dctx() {}
+	public:
+		/// \brief Initialize SIF CN decrypter context (version 3)
+		/// \param header The first 4-bytes contents of the file
+		/// \param filename File name that want to be decrypted. This affects the key calculation.
+		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
+		CN3_Dctx(const void* header, const char* filename);
+		/// \brief Creates SIF CN decrypter context specialized for encryption. (version 3)
+		/// \param filename File name that want to be encrypted. This affects the key calculation.
+		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
+		static CN3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
+		void final_setup(const char* filename, const void* block_rest);
+	};
+
 	/// International SIF decrypter context
 	class EN2_Dctx:public V2_Dctx
 	{
@@ -229,22 +247,22 @@ namespace HonokaMiku
 
 	/// Simplified Chinese SIF decrypter context.
 	/// It has longest prefix key currently
-	class CN_Dctx: public V2_Dctx
+	class CN2_Dctx: public V2_Dctx
 	{
 	protected:
-		CN_Dctx():V2_Dctx() {}
+		CN2_Dctx():V2_Dctx() {}
 	public:
 		/// \brief Initialize SIF CN decrypter context
 		/// \param header The first 4-bytes contents of the file
 		/// \param filename File name that want to be decrypted. This affects the key calculation.
 		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
-		CN_Dctx(const void* header, const char* filename):V2_Dctx("iLbs0LpvJrXm3zjdhAr4", header, filename) {}
+		CN2_Dctx(const void* header, const char* filename):V2_Dctx("iLbs0LpvJrXm3zjdhAr4", header, filename) {}
 		/// \brief Creates SIF CN decrypter context specialized for encryption.
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
-		inline static CN_Dctx* encrypt_setup(const char* filename, void* hdr_out)
+		inline static CN2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
-			CN_Dctx* dctx=new CN_Dctx();
+			CN2_Dctx* dctx=new CN2_Dctx();
 			setupEncryptV2(dctx, "iLbs0LpvJrXm3zjdhAr4", filename,hdr_out);
 			return dctx;
 		}
@@ -288,7 +306,8 @@ namespace HonokaMiku
 			case 2:
 			case 4: return "Hello";
 			case 3: return "M2o2B7i3M6o6N88";
-			case 5: return "iLbs0LpvJrXm3zjdhAr4";
+			case 5:
+			case 7: return "iLbs0LpvJrXm3zjdhAr4";
 			default: return NULL;
 		}
 	}
