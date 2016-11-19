@@ -101,6 +101,7 @@ namespace HonokaMiku
 		}
 	};
 
+	/// Base class of Version 3 decrypter
 	class V3_Dctx: public DecrypterContext
 	{
 	protected:
@@ -161,6 +162,24 @@ namespace HonokaMiku
 		void final_setup(const char* filename, const void* block_rest);
 	};
 
+	/// Taiwanese SIF decrypter context (Version 3)
+	class TW3_Dctx: public V3_Dctx
+	{
+	protected:
+		inline TW3_Dctx() {}
+	public:
+		/// \brief Initialize SIF TW decrypter context (version 3)
+		/// \param header The first 4-bytes contents of the file
+		/// \param filename File name that want to be decrypted. This affects the key calculation.
+		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
+		TW3_Dctx(const void* header, const char* filename);
+		/// \brief Creates SIF TW decrypter context specialized for encryption. (version 3)
+		/// \param filename File name that want to be encrypted. This affects the key calculation.
+		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
+		static TW3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
+		void final_setup(const char* filename, const void* block_rest);
+	};
+
 	/// Chinese SIF decrypter context (Version 3)
 	class CN3_Dctx: public V3_Dctx
 	{
@@ -202,22 +221,22 @@ namespace HonokaMiku
 	};
 
 	/// Taiwanese SIF decrypter context
-	class TW_Dctx:public V2_Dctx
+	class TW2_Dctx:public V2_Dctx
 	{
 	protected:
-		TW_Dctx():V2_Dctx() {}
+		TW2_Dctx():V2_Dctx() {}
 	public:
 		/// \brief Initialize SIF TW decrypter context
 		/// \param header The first 4-bytes contents of the file
 		/// \param filename File name that want to be decrypted. This affects the key calculation.
 		/// \exception std::runtime_error The header does not match and this decrypter context can't decrypt it.
-		TW_Dctx(const void* header, const char* filename):V2_Dctx("M2o2B7i3M6o6N88", header, filename) {}
+		TW2_Dctx(const void* header, const char* filename):V2_Dctx("M2o2B7i3M6o6N88", header, filename) {}
 		/// \brief Creates SIF TW decrypter context specialized for encryption.
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
-		inline static TW_Dctx* encrypt_setup(const char* filename, void* hdr_out)
+		inline static TW2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
-			TW_Dctx* dctx = new TW_Dctx();
+			TW2_Dctx* dctx = new TW2_Dctx();
 			setupEncryptV2(dctx,"M2o2B7i3M6o6N88", filename, hdr_out);
 			return dctx;
 		}

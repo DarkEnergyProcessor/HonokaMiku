@@ -47,8 +47,8 @@ DEBUG_MSV_CMD :=
 NDK_DEBUG :=
 
 # Files
-GCC_FILES=V1_Decrypter.o V2_Decrypter.o V3_Decrypter.o EN_Decrypter.o JP_Decrypter.o CN_Decrypter.o Helper.o HonokaMiku.o
-MSVC_FILES=V1_Decrypter.obj V2_Decrypter.obj V3_Decrypter.obj EN_Decrypter.obj JP_Decrypter.obj CN_Decrypter.obj Helper.obj HonokaMiku.obj VersionInfo.res
+GCC_FILES=V1_Decrypter.o V2_Decrypter.o V3_Decrypter.o EN_Decrypter.o JP_Decrypter.o TW_Decrypter.o CN_Decrypter.o Helper.o HonokaMiku.o
+MSVC_FILES=V1_Decrypter.obj V2_Decrypter.obj V3_Decrypter.obj EN_Decrypter.obj JP_Decrypter.obj TW_Decrypter CN_Decrypter.obj Helper.obj HonokaMiku.obj VersionInfo.res
 
 # Rules
 all: honokamiku
@@ -113,6 +113,12 @@ JP_Decrypter.o:
 
 JP_Decrypter.obj:
 	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/JP_Decrypter.cc
+
+TW_Decrypter.o:
+	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/TW_Decrypter.cc
+
+TW_Decrypter.obj:
+	cl -nologo -W3 -Zc:wchar_t -Za $(RELEASE_MSV_CMD) -wd"4996" -D"WIN32" -D"_CONSOLE" -EHsc -c $(CFLAGS) src/TW_Decrypter.cc
 
 V1_Decrypter.o:
 	$(xPREFIX)g++ -c $(RELEASE_GCC_CMD) $(DEBUG_GCC_CMD) $(CXXFLAGS) src/V1_Decrypter.cc

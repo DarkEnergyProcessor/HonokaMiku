@@ -16,8 +16,56 @@
 #endif
 
 #include "DecrypterContext.h"
-#include "CompilerName.h"
 #include "../VersionInfo.rc"
+
+const char* CompilerName()
+{
+	static char compilername[256];
+	static bool already_loaded = false;
+	static int v;
+
+	if(already_loaded) return compilername;
+
+	memset(compilername, 0, 256);
+#if defined(__clang__) || defined(__ICC) || defined(__INTEL_COMPILER)
+	/* Clang/LLVM or Intel Compiler. It support __VERSION__ ----- */
+	strcpy(compilername, __VERSION__);
+#elif defined(__GNUC__) || defined(__GNUG__)
+	/* GCC. -----------------------------------------------------*/
+	strcpy(compilername, "gcc-" __VERSION__);
+#elif defined(__HP_cc) || defined(__HP_aCC)
+	/* Hewlett-Packard C/aC++. ---------------------------------- */
+#ifdef __cplusplus
+	v=__HP_aCC;
+#else
+	v=__HP_cc;
+#endif
+	sprintf(compilername, "HP C/aC++ Version A.%02d.%02d.%02d", v/10000, (v/100)%100, v%100);
+#elif defined(__IBMC__) || defined(__IBMCPP__)
+	/* IBM XL C/C++. -------------------------------------------- */
+	strcpy(compilername,"IBM XL C/C++ Version " __xlc__);
+#elif defined(_MSC_VER)
+	/* Microsoft Visual Studio. --------------------------------- */
+	sprintf(compilername,"Visual Studio Version %02d.%02d.%05d.%02d", int(_MSC_VER/100), int(_MSC_VER)%100, int(_MSC_FULL_VER)%100000, _MSC_BUILD);
+#elif defined(__PGI)
+	/* Portland Group PGCC/PGCPP. ------------------------------- */
+	sprintf(compilername, "PGCC/PGCPP Version %02d.%d.%d", __PGIC__, __PGIC_MINOR, __PGIC_PATCHLEVEL__);
+#elif defined(__SUNPRO_C) || defined(__SUNPRO_CC)
+	/* Oracle Solaris Studio. ----------------------------------- */
+#ifdef __cplusplus
+	v=__SUNPRO_CC;
+#else
+	v=__SUNPRO_C;
+#endif
+	sprintf(compilername, "Solaris Studio Version %x.%x.%x", v/0x1000, (v/0x10)%0x100, v%0x10);
+#else
+	strcpy(compilername, "Unknown compiler");
+#endif
+	
+	already_loaded = true;
+	return compilername;
+}
+
 
 // Copied from MSVC strnicmp.c
 int msvcr110_strnicmp (const char * first, const char * last, size_t count)
@@ -117,6 +165,8 @@ char get_gametype(const char* a)
 		return 2;
 	else if(msvcr110_strnicmp(a, "t", 2) == 0 || msvcr110_strnicmp(a, "sif-tw", 7) == 0)
 		return 3;
+	else if(msvcr110_strnicmp(a, "t3", 3) == 0 || msvcr110_strnicmp(a, "sif-tw-v3", 10) == 0)
+		return 8;
 	else if(msvcr110_strnicmp(a, "c", 2) == 0 || msvcr110_strnicmp(a, "sif-cn", 7) == 0)
 		return 5;
 	else if(msvcr110_strnicmp(a, "c3", 3) == 0 || msvcr110_strnicmp(a, "sif-cn-v3", 10) == 0)
@@ -133,7 +183,7 @@ const char* gameid_to_string(char gameid)
 		case 2:
 			return "JP (Version 3) game file";
 		case 3:
-			return "TW game file";
+			return "TW (Version 2) game file";
 		case 4:
 			return "JP (Version 2) game file";
 		case 5:
@@ -142,6 +192,8 @@ const char* gameid_to_string(char gameid)
 			return "EN (Version 3) game file";
 		case 7:
 			return "CN (Version 3) game file";
+		case 8:
+			return "TW (Version 3) game file";
 		default:
 			return "Unknown";
 	}
@@ -158,6 +210,7 @@ const char* gameid_to_string_v1(char gameid)
 		case 4:
 			return "JP game file";
 		case 3:
+		case 8:
 			return "TW game file";
 		case 5:
 		case 7:
@@ -536,7 +589,20 @@ int main(int argc, char* argv[])
 					goto file2small_byte_buffer;
 				}
 
-				dctx->final_setup(g_Basename, header_buffer);
+				try
+				{
+					dctx->final_setup(g_Basename, header_buffer);
+				}
+				catch(std::runtime_error)
+				{
+					delete dctx;
+					delete[] _reserved_memory;
+					free(file_contents);
+					fclose(file_stream);
+					
+					fputs("Error: Name sum counter doesn't match\n", stderr);
+					return EBADF;
+				}
 			}
 		}
 		else

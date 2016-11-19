@@ -8,7 +8,6 @@
 
 #include "DecrypterContext.h"
 
-
 HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, const void* header, char* game_type)
 {
 	char temp;
@@ -46,7 +45,7 @@ HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, con
 				{
 					try
 					{
-						dctx = new TW_Dctx(header, filename);
+						dctx = new TW2_Dctx(header, filename);
 						*game_type = 3;
 					}
 					catch(std::runtime_error)
@@ -65,6 +64,13 @@ HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, con
 							}
 							catch(std::runtime_error)
 							{
+								try
+								{
+									dctx = new TW3_Dctx(header, filename);
+									*game_type = 8;
+								}
+								catch(std::runtime_error)
+								{}
 							}
 						}
 					}
@@ -87,7 +93,7 @@ HonokaMiku::DecrypterContext* HonokaMiku::CreateFrom(char game_id, const void* h
 			case 2:
 				return new JP3_Dctx(header, filename);
 			case 3:
-				return new TW_Dctx(header, filename);
+				return new TW2_Dctx(header, filename);
 			case 4:
 				return new JP2_Dctx(header, filename);
 			case 5:
@@ -96,6 +102,8 @@ HonokaMiku::DecrypterContext* HonokaMiku::CreateFrom(char game_id, const void* h
 				return new EN3_Dctx(header, filename);
 			case 7:
 				return new CN3_Dctx(header, filename);
+			case 8:
+				return new TW3_Dctx(header, filename);
 			default:
 				return NULL;
 		}
@@ -115,7 +123,7 @@ HonokaMiku::DecrypterContext* HonokaMiku::EncryptPrepare(char game_id, const cha
 		case 2:
 			return JP3_Dctx::encrypt_setup(filename, header_out);
 		case 3:
-			return TW_Dctx::encrypt_setup(filename, header_out);
+			return TW2_Dctx::encrypt_setup(filename, header_out);
 		case 4:
 			return JP2_Dctx::encrypt_setup(filename, header_out);
 		case 5:
@@ -124,6 +132,8 @@ HonokaMiku::DecrypterContext* HonokaMiku::EncryptPrepare(char game_id, const cha
 			return EN3_Dctx::encrypt_setup(filename, header_out);
 		case 7:
 			return CN3_Dctx::encrypt_setup(filename, header_out);
+		case 8:
+			return TW3_Dctx::encrypt_setup(filename, header_out);
 		default:
 			return NULL;
 	}

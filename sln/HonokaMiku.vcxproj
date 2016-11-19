@@ -172,6 +172,7 @@
     <ClCompile Include="..\src\Helper.cc" />
     <ClCompile Include="..\src\HonokaMiku.cc" />
     <ClCompile Include="..\src\JP_Decrypter.cc" />
+    <ClCompile Include="..\src\TW_Decrypter.cc" />
     <ClCompile Include="..\src\V1_Decrypter.cc" />
     <ClCompile Include="..\src\V2_Decrypter.cc" />
     <ClCompile Include="..\src\V3_Decrypter.cc" />

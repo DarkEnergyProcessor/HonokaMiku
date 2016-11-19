@@ -28,6 +28,9 @@
     <ClCompile Include="..\src\CN_Decrypter.cc">
       <Filter>Decrypter</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\TW_Decrypter.cc">
+      <Filter>Decrypter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\VersionInfo.rc" />
