@@ -126,8 +126,8 @@ static char usage_string[] =
 	" -j[3]                     Assume <input file> is SIF JP game file.\n"
 	" --sif-jp[-v3]\n"
 	"\n"
-	" -t                        Assume <input file> is SIF TW game file.\n"
-	" --sif-tw\n"
+	" -t[3]                     Assume <input file> is SIF TW game file.\n"
+	" --sif-tw[-v3]\n"
 	"\n"
 	" -v                        Show version information.\n"
 	" --version\n"
@@ -138,9 +138,8 @@ static char usage_string[] =
 	"\n"
 	" -x<game>                  Cross-encrypt to another game file.\n"
 	" --cross-encrypt<game>     <game> can be w, j, t, or c\n"
-	"                           For SIF EN and JP (w and j), add\n"
-	"                           \"3\" after the code to use version\n"
-	"                           3 algorithm\n"
+	"                           Add \"3\" after the code to use version\n"
+	"                           3 encrypt/decrypt algorithm\n"
 	"\n";
 
 int g_InPos = 0;				// Input filename argv position
@@ -325,7 +324,10 @@ void parse_args(int argc,char* argv[])
 					g_DecryptGame = 4;
 			
 			else if(s == 't')
-				g_DecryptGame = 3;
+				if(argv[i][2] == '3')
+					g_DecryptGame = 8;
+				else
+					g_DecryptGame = 3;
 
 			else if(s == 'v')
 			{
