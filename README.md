@@ -10,12 +10,21 @@ File decryption support
 =======================
 HonokaMiku supports decryption of SIF EN/WW, JP, TW, and CN game files, from version 1 encryption format to version 3 encryption format.
 
-It is also possible to decrypt Playground game files not from LL!SIF if you have the MD5 prefix key.
+It is also possible to decrypt Playground game files not from LL!SIF if you have the MD5 prefix key by using the API
+
+Documentation
+=============
+
+Documentation? `doxygen src/DecrypterContext.h`
 
 Embedding in Application
 ========================
 HonokaMiku is designed as an API at first, so embedding should be easy and straightforward.
 
+Just add `DecrypterContext.h`, `md5.h`, and all `*.cc` (except `HonokaMiku.cc`) files in `src` folder to your project and you're done.
+
 Implementation In Other Languages
 =================================
 Did you rewrite HonokaMiku to other languages? Send me your work and I'll add it in here.
+
+* [PHP Implementation](https://github.com/MikuAuahDark/SIFUniDecrypt) by [MikuAuahDark](https://github.com/MikuAuahDark)
