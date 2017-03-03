@@ -595,14 +595,14 @@ int main(int argc, char* argv[])
 				{
 					dctx->final_setup(g_Basename, header_buffer);
 				}
-				catch(std::runtime_error)
+				catch(std::runtime_error& e)
 				{
 					delete dctx;
 					delete[] _reserved_memory;
 					free(file_contents);
 					fclose(file_stream);
 					
-					fputs("Error: Name sum counter doesn't match\n", stderr);
+					fprintf(stderr, "Error: %s\n", e.what());
 					return EBADF;
 				}
 			}

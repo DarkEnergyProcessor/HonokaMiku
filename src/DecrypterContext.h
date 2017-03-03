@@ -54,7 +54,7 @@ namespace HonokaMiku
 		/// \brief Finalize decrypter context (Version 3 only). Does nothing in other decryption version.
 		/// \param filename File name that want to be decrypted. This affects the key calculation.
 		/// \param block_rest The next 12-bytes header of Version 3 encrypted file.
-		virtual void final_setup(const char* filename, const void* block_rest) = 0;
+		virtual void final_setup(const char* filename, const void* block_rest, int32_t fv = 0) = 0;
 	protected:
 		inline DecrypterContext() {}
 		/// \brief The key update function. Used to update the key. Used internally and protected
@@ -63,10 +63,10 @@ namespace HonokaMiku
 
 	/// For encrypt_setup static members for SIF EN, TW, KR, and CN. Used internally
 	void setupEncryptV2(V2_Dctx* dctx, const char* prefix, const char* filename, void* hdr_out);
-	/// For encrypt_setup static members for SIF JP and EN (Version 3). Used internally
-	void setupEncryptV3(V3_Dctx* dctx, const char* prefix, const unsigned int* key_tables, unsigned short name_sum_base, const char* filename, void* hdr_out);
+	/// For encrypt_setup static members for Version 3. Used internally
+	void setupEncryptV3(V3_Dctx* dctx, const char* prefix, uint16_t name_sum_base, const char* filename, void* hdr_out);
 	/// To finalize version 3 decrypter
-	void finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, const char* filename, const void* block_rest);
+	void finalDecryptV3(V3_Dctx* dctx, uint32_t expected_sum_name, const char* filename, const void* block_rest, int32_t force_version = 0);
 
 	/// Base class of Version 1 decrypter/encrypter
 	class V1_Dctx: public DecrypterContext
@@ -83,7 +83,7 @@ namespace HonokaMiku
 		void decrypt_block(void* dest, const void* src, uint32_t len);
 		void goto_offset(uint32_t offset);
 		void goto_offset_relative(int32_t offset);
-		inline void final_setup(const char* filename, const void* rest_block) {}
+		inline void final_setup(const char* , const void* , int32_t ) {}
 	};
 
 	/// Base class of Version 2 decrypter
@@ -98,24 +98,33 @@ namespace HonokaMiku
 		void decrypt_block(void* dest, const void* src, uint32_t len);
 		void goto_offset(uint32_t offset);
 		void goto_offset_relative(int32_t offset);
-		inline void final_setup(const char* filename, const void* rest_block)
-		{
-			// Do nothing for Version2 in here
-		}
+		inline void final_setup(const char* , const void* , int32_t ) {}
 	};
 
 	/// Base class of Version 3 decrypter
 	class V3_Dctx: public DecrypterContext
 	{
 	protected:
+		static void decryptV3(V3_Dctx* dctx, void* buffer, uint32_t len);
+		static void jumpV3(V3_Dctx* dctx, uint32_t offset);
+
 		/// Value to check if the decrypter context is already finalized
 		bool is_finalized;
-		/// Contains pointer to key table used for decryption
-		const unsigned int* key_tables;
+		/// Version 4 mod key
+		uint32_t shift_val;
+		uint32_t mul_val;
+		uint32_t add_val;
 
-		V3_Dctx(const char* prefix, const unsigned int* key_tables, const void* header, const char* filename);
-		inline V3_Dctx() {}
+		/// Decrypt block function used
+		void(*_decryptFunc)(V3_Dctx* , void* , uint32_t );
+		/// Jump function used
+		void(*_jumpFunc)(V3_Dctx* , uint32_t );
 
+		V3_Dctx(const char* prefix, const void* header, const char* filename);
+		inline V3_Dctx(): is_finalized(false), _decryptFunc(&decryptV3), _jumpFunc(&jumpV3) {}
+
+		virtual const uint32_t* _getKeyTables() = 0;
+		virtual const uint32_t* _getLngKeyTables();
 		void update();
 	public:
 		void decrypt_block(void* buffer, uint32_t len);
@@ -123,10 +132,10 @@ namespace HonokaMiku
 		void goto_offset(uint32_t offset);
 		void goto_offset_relative(int32_t offset);
 		static V3_Dctx* encrypt_setup(const char* prefix, const unsigned int* key_tables, const char* filename, void* hdr_out);
-		virtual void final_setup(const char* , const void* ) = 0;
+		virtual void final_setup(const char* , const void* , int ) = 0;
 
-		friend void setupEncryptV3(V3_Dctx* , const char* , const unsigned int* , unsigned short , const char* , void* );
-		friend void finalDecryptV3(V3_Dctx* , unsigned int , const char* , const void* );
+		friend void setupEncryptV3(V3_Dctx* , const char* , uint16_t , const char* , void* );
+		friend void finalDecryptV3(V3_Dctx* , uint32_t , const char* , const void* , int32_t );
 	};
 
 	/// Japanese SIF decrypter context
@@ -134,6 +143,8 @@ namespace HonokaMiku
 	{
 	protected:
 		inline JP3_Dctx() {}
+		const uint32_t* _getKeyTables();
+		const uint32_t* _getLngKeyTables();
 	public:
 		/// \brief Initialize SIF JP decrypter context
 		/// \param header The first 4-bytes contents of the file
@@ -144,7 +155,7 @@ namespace HonokaMiku
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
 		static JP3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
-		void final_setup(const char* filename, const void* block_rest);
+		void final_setup(const char* filename, const void* block_rest, int force_ver = 0);
 	};
 
 	/// International SIF decrypter context (Version 3)
@@ -152,6 +163,7 @@ namespace HonokaMiku
 	{
 	protected:
 		inline EN3_Dctx() {}
+		const uint32_t* _getKeyTables();
 	public:
 		/// \brief Initialize SIF EN decrypter context (version 3)
 		/// \param header The first 4-bytes contents of the file
@@ -162,7 +174,7 @@ namespace HonokaMiku
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
 		static EN3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
-		void final_setup(const char* filename, const void* block_rest);
+		void final_setup(const char* filename, const void* block_rest, int32_t force_ver = 0);
 	};
 
 	/// Taiwanese SIF decrypter context (Version 3)
@@ -170,6 +182,7 @@ namespace HonokaMiku
 	{
 	protected:
 		inline TW3_Dctx() {}
+		const uint32_t* _getKeyTables();
 	public:
 		/// \brief Initialize SIF TW decrypter context (version 3)
 		/// \param header The first 4-bytes contents of the file
@@ -180,7 +193,7 @@ namespace HonokaMiku
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
 		static TW3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
-		void final_setup(const char* filename, const void* block_rest);
+		void final_setup(const char* filename, const void* block_rest, int32_t force_ver = 0);
 	};
 
 	/// Chinese SIF decrypter context (Version 3)
@@ -188,6 +201,7 @@ namespace HonokaMiku
 	{
 	protected:
 		inline CN3_Dctx() {}
+		const uint32_t* _getKeyTables();
 	public:
 		/// \brief Initialize SIF CN decrypter context (version 3)
 		/// \param header The first 4-bytes contents of the file
@@ -198,7 +212,7 @@ namespace HonokaMiku
 		/// \param filename File name that want to be encrypted. This affects the key calculation.
 		/// \param hdr_out Pointer with size of 16-bytes to store the file header.
 		static CN3_Dctx* encrypt_setup(const char* filename, void* hdr_out);
-		void final_setup(const char* filename, const void* block_rest);
+		void final_setup(const char* filename, const void* block_rest, int32_t force_ver = 0);
 	};
 
 	/// International SIF decrypter context

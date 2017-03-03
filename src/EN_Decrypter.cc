@@ -5,7 +5,7 @@
 
 #include "DecrypterContext.h"
 
-static const unsigned int en_key_tables[64] = {
+static const uint32_t en_key_tables[64] = {
 	2861607190u	,3623207331u,3775582911u,3285432773u,
 	2211141973u	,3078448744u,464780620u	,714479011u,
 	439907422u	,421011207u	,2997499268u,630739911u,
@@ -24,17 +24,18 @@ static const unsigned int en_key_tables[64] = {
 	2963448367u	,3316646782u,322755307u	,3531653795u
 };
 
-HonokaMiku::EN3_Dctx::EN3_Dctx(const void* header, const char* filename): HonokaMiku::V3_Dctx(HonokaMiku::GetPrefixFromGameId(1), en_key_tables, header, filename) {}
+HonokaMiku::EN3_Dctx::EN3_Dctx(const void* header, const char* filename): HonokaMiku::V3_Dctx(HonokaMiku::GetPrefixFromGameId(1), header, filename) {}
 
+const uint32_t* HonokaMiku::EN3_Dctx::_getKeyTables() { return en_key_tables; }
 
-void HonokaMiku::EN3_Dctx::final_setup(const char* filename, const void* block_rest)
+void HonokaMiku::EN3_Dctx::final_setup(const char* filename, const void* block_rest, int force_version)
 {
-	finalDecryptV3(this, 844, filename, block_rest);
+	finalDecryptV3(this, 844, filename, block_rest, force_version);
 }
 
 HonokaMiku::EN3_Dctx* HonokaMiku::EN3_Dctx::encrypt_setup(const char* filename,void* hdr_out)
 {
 	EN3_Dctx* dctx = new EN3_Dctx;
-	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(1), en_key_tables, 844, filename, hdr_out);
+	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(1), 844, filename, hdr_out);
 	return dctx;
 }
