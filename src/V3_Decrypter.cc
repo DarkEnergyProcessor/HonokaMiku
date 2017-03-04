@@ -41,9 +41,9 @@ _jumpFunc(&jumpV3)
 		throw std::runtime_error(std::string("Header file doesn't match."));
 
 	is_finalized = false;
-	init_key = (mctx.digestRaw[3] << 24) |
-			   (mctx.digestRaw[2] << 16) |
-			   (mctx.digestRaw[1] << 8) | mctx.digestRaw[0];
+	init_key = (mctx.digestRaw[8] << 24) |
+			   (mctx.digestRaw[9] << 16) |
+			   (mctx.digestRaw[10] << 8) | mctx.digestRaw[11];
 	version = 3;
 }
 
