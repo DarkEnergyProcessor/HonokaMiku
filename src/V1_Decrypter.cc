@@ -31,6 +31,24 @@ HonokaMiku::V1_Dctx::V1_Dctx(const char* prefix, const char* filename)
 		(mctx.digestRaw[1] << 16) |
 		(mctx.digestRaw[2] << 8) |
 		(mctx.digestRaw[3]);
+
+	if(strcmp(prefix, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_JP)) == 0)
+		game_ver = HONOKAMIKU_GAMETYPE_JP;
+	else if(strcmp(prefix, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_EN)) == 0)
+		game_ver = HONOKAMIKU_GAMETYPE_EN;
+	else if(strcmp(prefix, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW)) == 0)
+		game_ver = HONOKAMIKU_GAMETYPE_TW;
+	else if(strcmp(prefix, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_CN)) == 0)
+		game_ver = HONOKAMIKU_GAMETYPE_CN;
+	else
+		game_ver = 0xFFFF;
+
+	version = 1;
+}
+
+uint32_t HonokaMiku::V1_Dctx::get_id()
+{
+	return HONOKAMIKU_DECRYPT_V1 | game_ver;
 }
 
 void HonokaMiku::V1_Dctx::decrypt_block(void* b, uint32_t size)

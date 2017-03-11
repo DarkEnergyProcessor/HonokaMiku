@@ -46,7 +46,7 @@ const char* CompilerName()
 	strcpy(compilername,"IBM XL C/C++ Version " __xlc__);
 #elif defined(_MSC_VER)
 	/* Microsoft Visual Studio. --------------------------------- */
-	sprintf(compilername,"Visual Studio Version %02d.%02d.%05d.%02d", int(_MSC_VER/100), int(_MSC_VER)%100, int(_MSC_FULL_VER)%100000, _MSC_BUILD);
+	sprintf(compilername,"MSVC %02d.%02d.%05d.%02d", int(_MSC_VER/100), int(_MSC_VER)%100, int(_MSC_FULL_VER)%100000, _MSC_BUILD);
 #elif defined(__PGI)
 	/* Portland Group PGCC/PGCPP. ------------------------------- */
 	sprintf(compilername, "PGCC/PGCPP Version %02d.%d.%d", __PGIC__, __PGIC_MINOR, __PGIC_PATCHLEVEL__);
@@ -65,7 +65,6 @@ const char* CompilerName()
 	already_loaded = true;
 	return compilername;
 }
-
 
 // Copied from MSVC strnicmp.c
 int msvcr110_strnicmp (const char * first, const char * last, size_t count)
@@ -95,284 +94,232 @@ int msvcr110_strnicmp (const char * first, const char * last, size_t count)
     }
 }
 
+bool AssembleGameName(int game_prop, char* dest)
+{
+	const char* gamepref = NULL;
+	int32_t ver = game_prop >> 16;
+
+	if(ver > 255)
+		return false;
+
+	switch(game_prop & 0xFFFF)
+	{
+		case HONOKAMIKU_GAMETYPE_JP:
+			gamepref = "JP";
+			break;
+		case HONOKAMIKU_GAMETYPE_EN:
+			gamepref = "EN";
+			break;
+		case HONOKAMIKU_GAMETYPE_TW:
+			gamepref = "TW";
+			break;
+		case HONOKAMIKU_GAMETYPE_CN:
+			gamepref = "CN";
+			break;
+		case 0xFFFF:
+			gamepref = "Unk";
+		default:
+			return false;
+	}
+
+	return sprintf(dest, "%s (Version %d) game file", gamepref, ver) > 0;
+}
+
+// Must be deleted with delete[]
+char* AssembleGameName(int game_prop)
+{
+	char* temp = new char[32];
+
+	if(AssembleGameName(game_prop, temp))
+		return temp;
+
+	delete[] temp;
+	return NULL;
+}
+
+int32_t GetGameProp(const char* str)
+{
+	uint32_t game_prop = (-1);
+
+	// Single character check
+	if(str[1] == 0 || str[2] == 0)
+	{
+		uint32_t defver = (str[1] == 0 || str[1] > 57 || str[1] < 49 ? HONOKAMIKU_DECRYPT_V3 : int32_t(str[1] - 48) << 16);
+
+		if(str[0] == 'j')
+			game_prop = HONOKAMIKU_GAMETYPE_JP | defver;
+		else if(str[0] == 'w')
+			game_prop = HONOKAMIKU_GAMETYPE_EN | defver;
+		else if(str[0] == 't')
+			game_prop = HONOKAMIKU_GAMETYPE_TW | defver;
+		else if(str[0] == 'c')
+			game_prop = HONOKAMIKU_GAMETYPE_JP | defver;
+	}
+
+	if(game_prop != 0xFFFFFFFF)
+		return game_prop;
+
+	// Multi-character-check
+	uint32_t defver = (-1);
+
+	if(strlen(str) == 9)
+	{
+		defver = int32_t(str[8] - 48);
+
+		if(defver < 1 || defver > 9)
+			return (-1);
+		else
+			defver <<= 16;
+	}
+	else
+		defver = HONOKAMIKU_DECRYPT_V3;
+
+	if(msvcr110_strnicmp(str, "sif-jp", 6) == 0)
+		return HONOKAMIKU_GAMETYPE_JP | defver;
+	else if(
+		msvcr110_strnicmp(str, "sif-ww", 6) == 0 ||
+		msvcr110_strnicmp(str, "sif-en", 6) == 0
+	)
+		return HONOKAMIKU_GAMETYPE_EN | defver;
+	else if(msvcr110_strnicmp(str, "sif-tw", 6) == 0)
+		return HONOKAMIKU_GAMETYPE_TW | defver;
+	else if(msvcr110_strnicmp(str, "sif-cn", 6) == 0)
+		return HONOKAMIKU_GAMETYPE_CN | defver;
+	
+	return (-1);
+}
+
 static char usage_string[] =
 	"Usage: %s <input file> [output file=input] [options]\n"
 	"<input file> and [output file] can be - for stdin and stdout.\n"
 	"\nOptions:\n"
-	" -1                        Encrypt/decrypt version 1 game files.\n"
-	" --olddecrypt              Also needs one of the game file flag\n"
-	"                           to be set. Encryption mode will be\n"
-	"                           ignored if this option is set.\n"
-	"                           New decrypt option can't be specificed\n"
-	"                           if this option is specificed.\n"
+	" -b <name>                 Use basename <name> as decrypt/encrypt\n"
+	" -basename <name>          key. Required if reading from stdin.\n"
 	"\n"
-	" -b<name>                  Use basename <name> as decrypt/encrypt\n"
-	" --basename<name>          key. Required if reading from stdin.\n"
-	"\n"
-	" -c[3]                     Assume <input file> is SIF CN game file.\n"
-	" --sif-cn[-v3]"
+	" -c[1|2|3]                 Assume <input file> is SIF CN game file.\n"
+	" -sif-cn[-v1|v2|v3]        Defaults to version 3\n"
 	"\n"
 	" -d                        Detect game file type only. [output file]\n"
-	" --detect                  and the other parameters is omitted.\n"
+	" -detect                   and the other parameters is omitted.\n"
 	"\n"
 	" -e                        Encrypt <input file> instead of decrypting\n"
-	" --encrypt                 it. If you use this, one of the game file\n"
+	" -encrypt                  it. If you use this, one of the game file\n"
 	"                           flag must be specificed.\n"
 	"\n"
 	" -h                        Show this message\n"
 	" -?\n"
-	" --help\n"
+	" -help\n"
 	"\n"
-	" -j[3]                     Assume <input file> is SIF JP game file.\n"
-	" --sif-jp[-v3]\n"
+	" -j[1|2|3|4]               Assume <input file> is SIF JP game file.\n"
+	" -sif-jp[-v1|v2|v3|v4]     Defaults to version 3\n"
 	"\n"
-	" -t[3]                     Assume <input file> is SIF TW game file.\n"
-	" --sif-tw[-v3]\n"
+	" -t[1|2|3]                 Assume <input file> is SIF TW game file.\n"
+	" -sif-tw[-v1|v2|v3]        Defaults to version 3\n"
 	"\n"
 	" -v                        Show version information.\n"
-	" --version\n"
+	" -version\n"
 	"\n"
-	" -w[3]                     Assume <input file> is SIF EN game file.\n"
-	" --sif-en[-v3]\n"
-	" --sif-ww[-v3]\n"
+	" -w[1|2|3]                 Assume <input file> is SIF EN game file.\n"
+	" -sif-en[-v1|v2|v3]        Defaults to version 3\n"
+	" -sif-ww[-v1|v2|v3]\n"
 	"\n"
-	" -x<game>                  Cross-encrypt to another game file.\n"
-	" --cross-encrypt<game>     <game> can be w, j, t, or c\n"
-	"                           Add \"3\" after the code to use version\n"
-	"                           3 encrypt/decrypt algorithm\n"
+	" -x <game>                 Cross-encrypt to another game file.\n"
+	" -cross-encrypt <game>     <game> can be w, j, t, or c for short\n"
+	"                           name (add 1, 2, or 3 to set version).\n"
+	"                           For long name, see argument options \n"
+	"                           above."
 	"\n";
 
-int g_InPos = 0;				// Input filename argv position
-int g_OutPos = 0;				// Output filename argv position
-const char* g_Basename = NULL;	// Basename
-const char* g_ProgramName;		// Executable name.
-char g_DecryptGame = 0;			// 0 = not specificed; 1 = ww/en; 2 = jp; 3 = tw; 4 = kr; 5 = cn
-char g_XEncryptGame = 0;		// 0 = cross-encryption not specificed; 1 = ww/en; 2 = jp; 3 = tw; 4 = kr; 5 = cn
-bool g_Encrypt = false;			// Encrypt mode?
-bool g_TestMode = false;		// Detect only.
-bool g_Version1 = false;		// Encrypt/decrypt version 1 game files (SIF v1.x)
+int32_t g_InPos = 0;						// Input filename argv position
+int g_OutPos = 0;							// Output filename argv position
+const char* g_Basename = NULL;				// Basename
+const char* g_ProgramName;					// Executable name.
+uint32_t g_DecryptGame = 0xFFFFFFFFU;		// Bitwise now
+uint32_t g_XEncryptGame = 0xFFFFFFFFU;		// Bitwise now
+bool g_Encrypt = false;						// Encrypt mode?
+bool g_TestMode = false;					// Detect only?
 
-char get_gametype(const char* a)
-{
-	if(msvcr110_strnicmp(a, "w", 2) == 0 || msvcr110_strnicmp(a, "sif-en", 7) == 0 || msvcr110_strnicmp(a, "sif-ww", 7) == 0)
-		return 1;
-	else if(msvcr110_strnicmp(a, "w3", 3) == 0 || msvcr110_strnicmp(a, "sif-en-v3", 10) == 0 || msvcr110_strnicmp(a, "sif-ww-v3", 10) == 0)
-		return 6;
-	else if(msvcr110_strnicmp(a, "j", 2) == 0 || msvcr110_strnicmp(a, "sif-jp", 7) == 0)
-		return 4;
-	else if(msvcr110_strnicmp(a, "j3", 3) == 0 || msvcr110_strnicmp(a, "sif-jp-v3", 10) == 0)
-		return 2;
-	else if(msvcr110_strnicmp(a, "t", 2) == 0 || msvcr110_strnicmp(a, "sif-tw", 7) == 0)
-		return 3;
-	else if(msvcr110_strnicmp(a, "t3", 3) == 0 || msvcr110_strnicmp(a, "sif-tw-v3", 10) == 0)
-		return 8;
-	else if(msvcr110_strnicmp(a, "c", 2) == 0 || msvcr110_strnicmp(a, "sif-cn", 7) == 0)
-		return 5;
-	else if(msvcr110_strnicmp(a, "c3", 3) == 0 || msvcr110_strnicmp(a, "sif-cn-v3", 10) == 0)
-		return 7;
-	return 0;
-}
-
-const char* gameid_to_string(char gameid)
-{
-	switch(gameid)
-	{
-		case 1:
-			return "EN (Version 2) game file";
-		case 2:
-			return "JP (Version 3) game file";
-		case 3:
-			return "TW (Version 2) game file";
-		case 4:
-			return "JP (Version 2) game file";
-		case 5:
-			return "CN (Version 2) game file";
-		case 6:
-			return "EN (Version 3) game file";
-		case 7:
-			return "CN (Version 3) game file";
-		case 8:
-			return "TW (Version 3) game file";
-		default:
-			return "Unknown";
-	}
-}
-
-const char* gameid_to_string_v1(char gameid)
-{
-	switch(gameid)
-	{
-		case 1:
-		case 6:
-			return "EN game file";
-		case 2:
-		case 4:
-			return "JP game file";
-		case 3:
-		case 8:
-			return "TW game file";
-		case 5:
-		case 7:
-			return "CN game file";
-		default:
-			return "Unknown";
-	}
-}
-
-void parse_args(int argc,char* argv[])
+void parse_args(int argc, char* argv[])
 {
 	int i = 1;
-	for(; i < argc; i++)
+
+	for(char* arg = argv[i]; i < argc; arg = argv[++i])
 	{
-		if(argv[i][0]=='-' && argv[i][1] != '\0')
+		if(*arg == '-' && *++arg != 0)
 		{
-			char s = tolower(argv[i][1]);
-			if(s == '-')
+			bool arg_f = false;
+
+			// Arguments that need 1 parameter
+			if(argv[i + 1] != NULL)
 			{
-				// Long-name argument parse
-				char* start_arg = argv[i] + 2;
-
-				if(msvcr110_strnicmp(start_arg, "basename", 9) == 0)
+				if(
+					msvcr110_strnicmp("b", arg, 2) == 0 ||
+					msvcr110_strnicmp("basename", arg, 9) == 0
+				)
 				{
-					i++;
+					g_Basename = argv[++i];
 
-					if(argv[i] == NULL)
-						fprintf(stderr, "Ignoring --basename\n");
-					else
-						g_Basename = __DctxGetBasename(argv[i]);
+					arg_f = true;
 				}
-
-				else if(msvcr110_strnicmp(start_arg, "cross-encrypt", 14) == 0)
+				else if(
+					msvcr110_strnicmp("x", arg, 2) == 0 ||
+					msvcr110_strnicmp("cross-encrypt", arg, 14) == 0
+				)
 				{
+					if((g_XEncryptGame = GetGameProp(argv[i + 1])) == (-1))
+						fprintf(stderr, "Cross-encrypt: Invalid game '%s'", argv[i + 1]);
+
 					i++;
-
-					if(argv[i] == NULL)
-						fprintf(stderr, "Ignoring --cross-encrypt\n");
-					else
-					{
-						g_XEncryptGame = get_gametype(argv[i]);
-
-						if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring --cross-encrypt: Unknown game type %s\n", argv[i]);
-					}
+					arg_f = true;
 				}
+			}
 
-				else if(msvcr110_strnicmp(start_arg, "encrypt", 8) == 0)
-					g_Encrypt=true;
-
-				else if(msvcr110_strnicmp(start_arg, "detect", 7) == 0)
-					g_TestMode=true;
-
-				else if(msvcr110_strnicmp(start_arg, "help", 5) == 0)
+			if(arg_f == false)
+			{
+				// No parameter argument
+				if(
+					msvcr110_strnicmp("d", arg, 2) == 0 ||
+					msvcr110_strnicmp("detect", arg, 7) == 0
+				)
+					g_TestMode = true;
+				else if(
+					msvcr110_strnicmp("h", arg, 2) == 0 ||
+					msvcr110_strnicmp("?", arg, 2) == 0 ||
+					msvcr110_strnicmp("help", arg, 5) == 0
+				)
 				{
 					fprintf(stderr, usage_string, g_ProgramName);
 					exit(0);
 				}
-
-				else if(msvcr110_strnicmp(start_arg, "olddecrypt", 10) == 0)
-					g_Version1 = true;
-
-				else if(msvcr110_strnicmp(start_arg, "version", 8) == 0)
+				else if(
+					msvcr110_strnicmp("v", arg, 2) == 0 ||
+					msvcr110_strnicmp("version", arg, 8) == 0
+				)
 				{
-					fprintf(stderr, "Version " HONOKAMIKU_VERSION_STRING " (%d)\n", HONOKAMIKU_VERSION);
-					fputs("Build at " __DATE__ " " __TIME__ "\n", stderr);
-					fprintf(stderr, "Compiled using %s\n\n", CompilerName());
-
+					fprintf(stderr,
+						"Version %s (%03d%03d%05d)\n"
+						"Build at " __DATE__ " " __TIME__ "\n"
+						"Compiled with %s\n"
+						, HONOKAMIKU_VERSION_STRING, HONOKAMIKU_VERSION_MAJOR, HONOKAMIKU_VERSION_MINOR, HONOKAMIKU_VERSION_PATCH,
+						CompilerName()
+					);
 					exit(0);
 				}
-				else if((g_DecryptGame = get_gametype(start_arg)) == 0)
-					fprintf(stderr, "Ignoring %s\n", argv[i]);
+				else if(
+					msvcr110_strnicmp("e", arg, 2) == 0 ||
+					msvcr110_strnicmp("encrypt", arg, 8) == 0
+				)
+					g_Encrypt = true;
+				else if((g_DecryptGame = GetGameProp(arg)) == (-1))
+					fprintf(stderr, "Unknown argument: %s\n", arg);
 			}
-			// Short argument name parse
-			else if(s == '1')
-				g_Version1 = true;
-
-			else if(s == 'b')
-			{
-				if(argv[i][2] == 0)
-				{
-					i++;
-					if(argv[i] == NULL)
-						fprintf(stderr, "Ignoring -b\n");
-					else
-						g_Basename = argv[i];
-				}
-				else
-					g_Basename = argv[i] + 2;
-			}
-			else if(s == 'c')
-				if(argv[i][2] == '3')
-					g_DecryptGame = 7;
-				else
-					g_DecryptGame = 5;
-
-			else if(s == 'd')
-				g_TestMode = true;
-
-			else if(s == 'e')
-				g_Encrypt = true;
-
-			else if(s == 'h' || s == '?')
-			{
-				fprintf(stderr, usage_string, g_ProgramName);
-				exit(0);
-			}
-
-			else if(s == 'j')
-				if(argv[i][2] == '3')
-					g_DecryptGame = 2;
-				else
-					g_DecryptGame = 4;
-			
-			else if(s == 't')
-				if(argv[i][2] == '3')
-					g_DecryptGame = 8;
-				else
-					g_DecryptGame = 3;
-
-			else if(s == 'v')
-			{
-				fprintf(stderr, "Version " HONOKAMIKU_VERSION_STRING " (%d)\n", HONOKAMIKU_VERSION);
-				fputs("Build at " __DATE__ " " __TIME__ "\n", stderr);
-				fprintf(stderr, "Compiled using %s\n\n", CompilerName());
-
-				exit(0);
-			}
-
-			else if(s == 'w')
-				if(argv[i][2] == '3')
-					g_DecryptGame = 6;
-				else
-					g_DecryptGame = 1;
-
-			else if(s == 'x')
-			{
-				char* target = NULL;
-				if(argv[i][2] == 0)
-				{
-					i++;
-
-					if(argv[i] == NULL)
-						fprintf(stderr, "Ignoring -x\n");
-					else
-						g_XEncryptGame = get_gametype(target = argv[i]);
-				}
-				else
-				{
-					g_XEncryptGame = get_gametype(target = argv[i] + 2);
-
-					if(g_XEncryptGame == 0) fprintf(stderr, "Ignoring -x: Unknown game type %s\n", target);
-				}
-			}
-
-			else
-				fprintf(stderr, "Ignoring %s: Unknown option\n", argv[i]);
 		}
 		else if(g_InPos == 0)
 			g_InPos = i;
 		else if(g_OutPos == 0)
 			g_OutPos = i;
 		else
-			fprintf(stderr, "Ignoring %s\n", argv[i]);
+			fprintf(stderr, "Ignored: %s\n", argv[i]);
 	}
 }
 
@@ -401,14 +348,7 @@ void check_args(char* argv[])
 		g_Basename = __DctxGetBasename(argv[g_InPos]);
 	}
 
-	if(g_Version1 && g_DecryptGame == 0)
-	{
-		fputs("Error: version 1 decryption requires game file switch\n\n", stderr);
-		fprintf(stderr, usage_string, g_ProgramName);
-		
-		exit(EINVAL);
-	}
-	else if(g_Encrypt && g_DecryptGame == 0)
+	else if(g_Encrypt && g_DecryptGame == (-1))
 	{
 		fputs("Error: encrypt mode requires game file switch\n\n", stderr);
 		fprintf(stderr, usage_string, g_ProgramName);
@@ -422,12 +362,6 @@ void check_args(char* argv[])
 		
 		exit(EINVAL);
 	}
-
-	if(g_Encrypt && g_Version1)
-	{
-		fputs("Warning: encrypt mode option ignored for version 1\n", stderr);
-		g_Encrypt = false;
-	}
 }
 
 int main(int argc, char* argv[])
@@ -438,7 +372,7 @@ int main(int argc, char* argv[])
 	unsigned char header_buffer[16];
 	char* filename_input;
 	char* filename_output;
-	char* _reserved_memory = new char[2*1024*1024];	// 2 MB of memory. If we're running out of memory, delete this.
+	char* _reserved_memory = new char[2*1024*1024];	// 2 MB of memory. Used for gamefile string and OOM handling mechanism
 	size_t file_contents_length = 0;		// This is the file size
 	size_t file_contents_size = 4096;		// This is the memory size
 	size_t header_size = 4;					// Used on encrypt mode
@@ -462,7 +396,7 @@ int main(int argc, char* argv[])
 		return 1;
 	}
 
-	parse_args(argc,argv);
+	parse_args(argc, argv);
 	check_args(argv);
 
 	filename_input = argv[g_InPos];
@@ -486,11 +420,14 @@ int main(int argc, char* argv[])
 
 	if(g_TestMode)
 	{
-		char expected = g_DecryptGame;
+		uint32_t expected = g_DecryptGame;
+
 		fputs("Detecting: ", stderr);
 
 		if(fread(header_buffer, 1, 4, file_stream) != 4)
 		{
+			toosmallfilebuffer:
+
 			delete[] _reserved_memory;
 			fclose(file_stream);
 
@@ -498,23 +435,41 @@ int main(int argc, char* argv[])
 			return EBADF;
 		}
 
-		dctx = HonokaMiku::FindSuitable(g_Basename, header_buffer, &g_DecryptGame);
-
-		delete[] _reserved_memory;
+		dctx = HonokaMiku::FindSuitable(g_Basename, header_buffer);
 
 		if (dctx == NULL)
 		{
+			delete[] _reserved_memory;
 			fputs("Unknown\n", stderr);
 
 			if(expected > 0) return (-1);
 		}
 		else
 		{
-			fprintf(stderr, "%s\n", gameid_to_string(g_DecryptGame));
-
-			if(expected > 0)
+			if(dctx->version >= 3)
 			{
-				fprintf(stderr, "Expected: %s\n", gameid_to_string(expected));
+				if(fread(header_buffer, 1, 12, file_stream) != 12)
+					goto toosmallfilebuffer;
+
+				try
+				{
+					dctx->final_setup(g_Basename, header_buffer);
+				}
+				catch(std::runtime_error& e)
+				{
+					fprintf(stderr, "\nError: %s\n", e.what());
+
+					return EBADF;
+				}
+			}
+
+			AssembleGameName(g_DecryptGame = dctx->get_id(), _reserved_memory);
+			fprintf(stderr, "%s\n", _reserved_memory);
+
+			if(expected != 0xFFFFFFFFU)
+			{
+				AssembleGameName(expected, _reserved_memory + 512);
+				fprintf(stderr, "Expected: %s\n", _reserved_memory + 512);
 
 				return expected == g_DecryptGame ? 0 : (-1);
 			}
@@ -539,19 +494,14 @@ int main(int argc, char* argv[])
 
 	if(g_Encrypt)
 	{
-		fprintf(stderr, "Encrypt as: %s\n", gameid_to_string(g_DecryptGame));
+		dctx = HonokaMiku::RequestEncrypter(g_DecryptGame, g_Basename, header_buffer);
 
-		dctx = HonokaMiku::EncryptPrepare(g_DecryptGame, g_Basename, header_buffer);
+		AssembleGameName(dctx->get_id(), _reserved_memory);
+		fprintf(stderr, "Encrypt as: %s\n", _reserved_memory);
 	}
 	else
 	{
-		if(g_Version1)
-		{
-			fprintf(stderr, "Version 1 decrypt: %s\n", gameid_to_string_v1(g_DecryptGame));
-
-			dctx = new HonokaMiku::V1_Dctx(HonokaMiku::GetPrefixFromGameId(g_DecryptGame), g_Basename);
-		}
-		else if(fread(header_buffer, 1, 4, file_stream) != 4)
+		if(fread(header_buffer, 1, 4, file_stream) != 4)
 		{
 			file2small_byte_buffer:
 
@@ -563,11 +513,12 @@ int main(int argc, char* argv[])
 
 			return EBADF;
 		}
-		else if(g_DecryptGame > 0)
+		else if(g_DecryptGame != 0xFFFFFFFF)
 		{
-			fprintf(stderr, "Decrypt as: %s\n", gameid_to_string(g_DecryptGame));
+			AssembleGameName(g_DecryptGame, _reserved_memory);
+			fprintf(stderr, "Decrypt as: %s\n", _reserved_memory);
 
-			dctx = HonokaMiku::CreateFrom(g_DecryptGame, header_buffer, g_Basename);
+			dctx = HonokaMiku::RequestDecrypter(g_DecryptGame, header_buffer, g_Basename);
 
 			if(dctx == NULL)
 			{
@@ -580,20 +531,19 @@ int main(int argc, char* argv[])
 				return EINVAL;
 			}
 
-			if(dctx->version == 3)
+			if(dctx->version >= 3)
 			{
-				version3_finalize_setup:
-
 				if(fread(header_buffer, 1, 12, file_stream) != 12)
 				{
 					delete dctx;
+					fputc('\n', stderr);
 
 					goto file2small_byte_buffer;
 				}
 
 				try
 				{
-					dctx->final_setup(g_Basename, header_buffer);
+					dctx->final_setup(g_Basename, header_buffer, g_DecryptGame >> 16);
 				}
 				catch(std::runtime_error& e)
 				{
@@ -611,7 +561,7 @@ int main(int argc, char* argv[])
 		{
 			fputs("Auto-detecting: ", stderr);
 
-			dctx = HonokaMiku::FindSuitable(g_Basename, header_buffer, &g_DecryptGame);
+			dctx = HonokaMiku::FindSuitable(g_Basename, header_buffer);
 
 			if (dctx == NULL)
 			{
@@ -623,10 +573,34 @@ int main(int argc, char* argv[])
 				return EINVAL;
 			}
 
-			fprintf(stderr, "%s\n", gameid_to_string(g_DecryptGame));
+			if(dctx->version >= 3)
+			{
+				if(fread(header_buffer, 1, 12, file_stream) != 12)
+				{
+					fputc('\n', stderr);
+					delete dctx;
 
-			if(dctx->version == 3)
-				goto version3_finalize_setup;
+					goto file2small_byte_buffer;
+				}
+
+				try
+				{
+					dctx->final_setup(g_Basename, header_buffer);
+				}
+				catch(std::runtime_error& e)
+				{
+					delete dctx;
+					delete[] _reserved_memory;
+					free(file_contents);
+					fclose(file_stream);
+					
+					fprintf(stderr, "\nError: %s\n", e.what());
+					return EBADF;
+				}
+			}
+
+			AssembleGameName(g_DecryptGame = dctx->get_id(), _reserved_memory);
+			fprintf(stderr, "%s\n", _reserved_memory);
 		}
 	}
 
@@ -635,11 +609,31 @@ int main(int argc, char* argv[])
 	{
 		HonokaMiku::Dctx* cross_dctx = NULL;
 		static const size_t chunk_size = 4096;		// Edit if necessary
+		size_t version1_consideration = 0;
 		unsigned char* byte_buffer;
 
-		if(g_XEncryptGame > 0)
+		try
 		{
-			fprintf(stderr, "Cross-encrypt to: %s", gameid_to_string(g_XEncryptGame));
+			byte_buffer = new uint8_t[chunk_size];
+		}
+		catch(std::bad_alloc& )
+		{
+			free(file_contents);
+
+			goto not_enough_memory;
+		}
+
+		if(dctx->version == 1 && g_Encrypt == false)
+		{
+			version1_consideration = 4;
+
+			memcpy(byte_buffer, header_buffer, 4);
+		}
+
+		if(g_XEncryptGame != 0xFFFFFFFF)
+		{
+			AssembleGameName(g_XEncryptGame, _reserved_memory + 512);
+			fprintf(stderr, "Cross-encrypt to: %s", _reserved_memory + 512);
 
 			if(g_XEncryptGame == g_DecryptGame)
 			{
@@ -649,28 +643,14 @@ int main(int argc, char* argv[])
 
 			fputc('\n', stderr);
 
-			if(!g_Version1)
-			{
-				g_Encrypt = true;
-				cross_dctx = HonokaMiku::EncryptPrepare(g_XEncryptGame, g_Basename, header_buffer);
-			}
-			else
-				cross_dctx = new HonokaMiku::V1_Dctx(HonokaMiku::GetPrefixFromGameId(g_XEncryptGame), g_Basename);
-
+			g_Encrypt = true;
+			cross_dctx = HonokaMiku::RequestEncrypter(g_XEncryptGame, g_Basename, header_buffer);
 		}
 
-		try
+		while(size_t read_bytes = fread(byte_buffer + version1_consideration, 1, chunk_size - version1_consideration, file_stream) + version1_consideration)
 		{
-			byte_buffer = new unsigned char[chunk_size];
-		}
-		catch(std::bad_alloc& )
-		{
-			free(file_contents);
+			version1_consideration = 0;
 
-			goto not_enough_memory;
-		}
-		while(size_t read_bytes = fread(byte_buffer, 1, chunk_size, file_stream))
-		{
 			for(size_t free_size = file_contents_size - file_contents_length; read_bytes > free_size; )
 			{
 				if(read_bytes > free_size)
@@ -727,11 +707,9 @@ int main(int argc, char* argv[])
 	// If we're encrypting, write header first
 	if(g_Encrypt)
 	{
+		header_size = HonokaMiku::GetHeaderSize(dctx->get_id());
 
-		if(dctx->version == 3)
-			header_size = 16;
-
-		if(fwrite(header_buffer, 1, header_size, file_stream) != header_size)
+		if(header_size > 0 && fwrite(header_buffer, 1, header_size, file_stream) != header_size)
 		{
 			write_error:
 

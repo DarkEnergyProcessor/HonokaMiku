@@ -28,7 +28,7 @@ _jumpFunc(&jumpV3)
 
 	mctx.Init();
 	mctx.Update(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
-	mctx.Update((unsigned char*)basename, strlen(basename));
+	mctx.Update(reinterpret_cast<const uint8_t*>(basename), strlen(basename));
 	mctx.Final();
 
 	memcpy(digcopy, mctx.digestRaw + 4, 3);
@@ -47,7 +47,7 @@ _jumpFunc(&jumpV3)
 	version = 3;
 }
 
-void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, const char* filename, const void* block_rest, int force_version)
+void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, const char* filename, const void* block_rest, int32_t force_version)
 {
 	// Already assumed that the first 4 bytes already processed above.
 	if (!dctx->is_finalized)
@@ -65,8 +65,7 @@ void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, c
 			if (name_sum == expected_sum)
 			{
 				dctx->init_key = dctx->_getKeyTables()[name_sum & 0x3F];
-				dctx->update_key = dctx->init_key;
-				dctx->xor_key = dctx->init_key >> 24;
+				dctx->xor_key = dctx->update_key = dctx->init_key;
 				dctx->shift_val = 24;
 				dctx->add_val = 2531011;
 				dctx->mul_val = 214013;
@@ -114,13 +113,13 @@ void HonokaMiku::finalDecryptV3(V3_Dctx* dctx, unsigned int expected_sum_name, c
 	}
 }
 
-void HonokaMiku::setupEncryptV3(HonokaMiku::V3_Dctx* dctx, const char* prefix, unsigned short name_sum_base, const char* filename, void* hdr_out)
+void HonokaMiku::setupEncryptV3(HonokaMiku::V3_Dctx* dctx, const char* prefix, unsigned short name_sum_base, const char* filename, void* hdr_out, int32_t fv)
 {
 	MD5 mctx;
-	const char* basename=__DctxGetBasename(filename);
-	uint8_t hdr_create[16];
+	const char* basename = __DctxGetBasename(filename);
+	const uint32_t* lcg_ktbl = dctx->_getLngKeyTables();
+	uint8_t* hdr_create = reinterpret_cast<uint8_t*>(hdr_out);
 	uint8_t digcopy[3];
-	uint16_t key_picker=name_sum_base;
 
 	mctx.Init();
 	mctx.Update(reinterpret_cast<const uint8_t*>(prefix), strlen(prefix));
@@ -129,31 +128,50 @@ void HonokaMiku::setupEncryptV3(HonokaMiku::V3_Dctx* dctx, const char* prefix, u
 
 	memcpy(digcopy, mctx.digestRaw + 4, 3);
 	memset(hdr_create, 0, 16);
+	hdr_create[3] = 12;
 	
 	digcopy[0] = ~digcopy[0];
 	digcopy[1] = ~digcopy[1];
 	digcopy[2] = ~digcopy[2];
+	memcpy(hdr_create, &digcopy, 3);
 
-	hdr_create[3]=12;
+	if(fv == 0 || fv == 3)
+	{
+		uint16_t key_picker = name_sum_base;
 
-	memcpy(hdr_create,&digcopy,3);
+		for(;*basename != 0; key_picker += *basename, basename++) {}
 
-	for(;*basename != 0; key_picker += *basename, basename++) {}
+		hdr_create[10] = key_picker >> 8;
+		hdr_create[11] = key_picker & 0xFF;
+		
+		dctx->init_key = dctx->_getKeyTables()[hdr_create[11] & 0x3F];
+		dctx->xor_key = dctx->update_key = dctx->init_key;
+		dctx->pos = 0;
+		dctx->version = 3;
+		dctx->shift_val = 24;
+		dctx->add_val = 2531011;
+		dctx->mul_val = 214013;
+		dctx->is_finalized = true;
+	}
+	else if(fv == 4 && lcg_ktbl != NULL)
+	{
+		hdr_create[4] = 0x2C;
+		hdr_create[7] = 2;
 
-	hdr_create[10] = key_picker >> 8;
-	hdr_create[11] = key_picker & 0xFF;
-
-	dctx->init_key = dctx->_getKeyTables()[hdr_create[11] & 0x3F];
-	dctx->update_key = dctx->init_key;
-	dctx->xor_key = dctx->init_key >> 24;
-	dctx->pos = 0;
-	dctx->version = 3;
-	dctx->shift_val = 24;
-	dctx->add_val = 2531011;
-	dctx->mul_val = 214013;
-	dctx->is_finalized = true;
-
-	memcpy(hdr_out, hdr_create, 16);
+		dctx->init_key = (mctx.digestRaw[8] << 24) |
+						 (mctx.digestRaw[9] << 16) |
+						 (mctx.digestRaw[10] << 8) |
+						 mctx.digestRaw[11];
+		dctx->xor_key = dctx->update_key = dctx->init_key;
+		dctx->pos = 0;
+		dctx->version = 4;
+		dctx->mul_val = lcg_ktbl[0];
+		dctx->shift_val = lcg_ktbl[2];
+		dctx->add_val = lcg_ktbl[1];
+		dctx->is_finalized = true;
+	}
+	else
+		throw std::runtime_error("No suitable or invalid encryption method.");
 }
 
 void HonokaMiku::V3_Dctx::decryptV3(V3_Dctx* dctx, void* b, uint32_t size)
@@ -163,7 +181,7 @@ void HonokaMiku::V3_Dctx::decryptV3(V3_Dctx* dctx, void* b, uint32_t size)
 	uint32_t i;
 
 	for(i = dctx->xor_key; size; i = (dctx->update_key = dctx->mul_val * dctx->update_key + dctx->add_val), size--)
-		*buffer++ ^= i >> dctx->shift_val;
+		*buffer++ ^= uint8_t(i >> dctx->shift_val);
 
 	dctx->xor_key = i;
 }
@@ -219,7 +237,7 @@ void HonokaMiku::V3_Dctx::decrypt_block(void* _d, const void* _s, uint32_t size)
 		memcpy(_d, _s, size);
 		_decryptFunc(this, out_buffer, size);
 
-		pos+=size;
+		pos += size;
 		return;
 	}
 

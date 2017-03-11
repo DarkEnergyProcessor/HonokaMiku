@@ -8,66 +8,91 @@
 
 #include "DecrypterContext.h"
 
-HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, const void* header, char* game_type)
-{
-	char temp;
-	DecrypterContext* dctx = NULL;
+#define MAKE_FACTORY_FUNCTION(gametype) \
+	static HonokaMiku::DecrypterContext* factory_##gametype(uint32_t dec, const char* filename, const void* header) \
+	{ \
+		HonokaMiku::DecrypterContext* x = NULL; \
+		\
+		switch(dec) \
+		{ \
+			case HONOKAMIKU_DECRYPT_V1: \
+				x = new HonokaMiku::V1_Dctx(HonokaMiku::GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_##gametype), filename); break; \
+			case HONOKAMIKU_DECRYPT_V2: \
+				x = new HonokaMiku::gametype##2_Dctx(header, filename); break; \
+			case HONOKAMIKU_DECRYPT_V3: \
+			case HONOKAMIKU_DECRYPT_V4: \
+			case HONOKAMIKU_DECRYPT_V5: \
+			case HONOKAMIKU_DECRYPT_V6: \
+			case HONOKAMIKU_DECRYPT_V7: \
+				x = new HonokaMiku::gametype##3_Dctx(header, filename); break; \
+		} \
+		return x; \
+	}
 
-	if(game_type == NULL) game_type = &temp;
+MAKE_FACTORY_FUNCTION(JP);
+MAKE_FACTORY_FUNCTION(EN);
+MAKE_FACTORY_FUNCTION(TW);
+MAKE_FACTORY_FUNCTION(CN);
+
+typedef HonokaMiku::DecrypterContext*(*FactoryFunc)(uint32_t , const char* , const void* );
+
+
+FactoryFunc DecrypterConstructors[] = {
+	&factory_JP,
+	&factory_EN,
+	&factory_TW,
+	&factory_CN
+};
+
+HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, const void* header)
+{
+	DecrypterContext* dctx = NULL;
 
 	try
 	{
 		dctx = new EN3_Dctx(header, filename);
-		*game_type = 6;
 	}
 	catch(std::runtime_error& )
 	{
 		try
 		{
 			dctx = new JP3_Dctx(header, filename);
-			*game_type = 2;
 		}
 		catch(std::runtime_error& )
 		{
 			try
 			{
 				dctx = new EN2_Dctx(header, filename);
-				*game_type = 1;
 			}
 			catch(std::runtime_error& )
 			{
 				try
 				{
 					dctx = new JP2_Dctx(header, filename);
-					*game_type = 4;
 				}
 				catch(std::runtime_error& )
 				{
 					try
 					{
 						dctx = new TW2_Dctx(header, filename);
-						*game_type = 3;
 					}
 					catch(std::runtime_error)
 					{
 						try
 						{
 							dctx = new CN2_Dctx(header, filename);
-							*game_type = 5;
 						}
 						catch(std::runtime_error)
 						{
 							try
 							{
 								dctx = new CN3_Dctx(header, filename);
-								*game_type = 7;
 							}
 							catch(std::runtime_error)
 							{
 								try
 								{
 									dctx = new TW3_Dctx(header, filename);
-									*game_type = 8;
 								}
 								catch(std::runtime_error)
 								{}
@@ -82,31 +107,14 @@ HonokaMiku::DecrypterContext* HonokaMiku::FindSuitable(const char* filename, con
 	return dctx;
 }
 
-HonokaMiku::DecrypterContext* HonokaMiku::CreateFrom(char game_id, const void* header, const char* filename)
+HonokaMiku::DecrypterContext* HonokaMiku::RequestDecrypter(uint32_t game_prop, const void* header, const char* filename)
 {
 	try
 	{
-		switch(game_id)
-		{
-			case 1:
-				return new EN2_Dctx(header, filename);
-			case 2:
-				return new JP3_Dctx(header, filename);
-			case 3:
-				return new TW2_Dctx(header, filename);
-			case 4:
-				return new JP2_Dctx(header, filename);
-			case 5:
-				return new CN2_Dctx(header, filename);
-			case 6:
-				return new EN3_Dctx(header, filename);
-			case 7:
-				return new CN3_Dctx(header, filename);
-			case 8:
-				return new TW3_Dctx(header, filename);
-			default:
-				return NULL;
-		}
+		if((game_prop & 0xFFFF) > HONOKAMIKU_GAMETYPE_CN)
+			return NULL;
+
+		return DecrypterConstructors[game_prop & 0xFFFF](game_prop & 0xFFFF0000U, filename, header);
 	}
 	catch(std::runtime_error& )
 	{
@@ -114,27 +122,38 @@ HonokaMiku::DecrypterContext* HonokaMiku::CreateFrom(char game_id, const void* h
 	}
 }
 
-HonokaMiku::DecrypterContext* HonokaMiku::EncryptPrepare(char game_id, const char* filename, void* header_out)
+HonokaMiku::DecrypterContext* HonokaMiku::RequestEncrypter(uint32_t game_prop, const char* filename, void* header_out)
 {
-	switch(game_id)
+	uint32_t dectype = game_prop & 0xFFFF0000U;
+	uint32_t gt = game_prop & 0xFFFF;
+
+	if(dectype == HONOKAMIKU_DECRYPT_V1)
+		return new V1_Dctx(GetPrefixFromGameType(game_prop & 0xFFFF), filename);
+	else if(dectype == HONOKAMIKU_DECRYPT_V2)
 	{
-		case 1:
-			return EN2_Dctx::encrypt_setup(filename, header_out);
-		case 2:
-			return JP3_Dctx::encrypt_setup(filename, header_out);
-		case 3:
-			return TW2_Dctx::encrypt_setup(filename, header_out);
-		case 4:
-			return JP2_Dctx::encrypt_setup(filename, header_out);
-		case 5:
-			return CN2_Dctx::encrypt_setup(filename, header_out);
-		case 6:
-			return EN3_Dctx::encrypt_setup(filename, header_out);
-		case 7:
-			return CN3_Dctx::encrypt_setup(filename, header_out);
-		case 8:
-			return TW3_Dctx::encrypt_setup(filename, header_out);
-		default:
-			return NULL;
+		switch(gt)
+		{
+			case HONOKAMIKU_GAMETYPE_JP: return JP2_Dctx::encrypt_setup(filename, header_out);
+			case HONOKAMIKU_GAMETYPE_EN: return EN2_Dctx::encrypt_setup(filename, header_out);
+			case HONOKAMIKU_GAMETYPE_TW: return TW2_Dctx::encrypt_setup(filename, header_out);
+			case HONOKAMIKU_GAMETYPE_CN: return CN2_Dctx::encrypt_setup(filename, header_out);
+			default: return NULL;
+		}
 	}
+	else if(dectype >= HONOKAMIKU_DECRYPT_V3)
+	{
+		int32_t fv = dectype >> 16;
+		fv = fv == 0xFFFF ? 0 : fv;
+
+		switch(gt)
+		{
+			case HONOKAMIKU_GAMETYPE_JP: return JP3_Dctx::encrypt_setup(filename, header_out, fv);
+			case HONOKAMIKU_GAMETYPE_EN: return EN3_Dctx::encrypt_setup(filename, header_out, fv);
+			case HONOKAMIKU_GAMETYPE_TW: return TW3_Dctx::encrypt_setup(filename, header_out, fv);
+			case HONOKAMIKU_GAMETYPE_CN: return CN3_Dctx::encrypt_setup(filename, header_out, fv);
+			default: return NULL;
+		}
+	}
+	else
+		return NULL;
 }

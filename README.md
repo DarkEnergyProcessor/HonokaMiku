@@ -8,9 +8,9 @@ Basically it allows decryption of LL!SIF game files so that it can be opened wit
 
 File decryption support
 =======================
-HonokaMiku supports decryption of SIF EN/WW, JP, TW, and CN game files, from version 1 encryption format to version 3 encryption format.
+HonokaMiku supports decryption of SIF EN/WW, JP, TW, and CN game files, from version 1 encryption format to version 4 encryption format.
 
-It is also possible to decrypt Playground game files not from LL!SIF if you have the MD5 prefix key by using the API
+It is also possible to decrypt Playground game files not from LL!SIF if you have the MD5 prefix key by using the API.
 
 Documentation
 =============
@@ -27,4 +27,4 @@ Implementation In Other Languages
 =================================
 Did you rewrite HonokaMiku to other languages? Send me your work and I'll add it in here.
 
-* [PHP Implementation](https://github.com/MikuAuahDark/SIFUniDecrypt) by [MikuAuahDark](https://github.com/MikuAuahDark)
+* ~~[PHP Implementation](https://github.com/MikuAuahDark/SIFUniDecrypt) by [MikuAuahDark](https://github.com/MikuAuahDark)~~ (Correspond to HonokaMiku v4.2.1)
