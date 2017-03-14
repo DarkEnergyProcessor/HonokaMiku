@@ -1,6 +1,10 @@
 /**
 * \file DecrypterContext.h
-* Base header of SIF game files decrypter
+* \brief Base header of SIF game files decrypter
+* \author Dark Energy Processor Corporation
+* \author AuahDark
+* \version 5.0.0
+* \copyright MIT License
 **/
 
 #ifndef _HONOKAMIKU_DECRYPTERCONTEXT
@@ -13,14 +17,22 @@
 
 #include <stdint.h>
 
+/// Japanese game type
 #define HONOKAMIKU_GAMETYPE_JP     0x0000
+/// International game type
 #define HONOKAMIKU_GAMETYPE_EN     0x0001
+/// Taiwanese game type
 #define HONOKAMIKU_GAMETYPE_TW     0x0002
+/// Simplified Chinese game type
 #define HONOKAMIKU_GAMETYPE_CN     0x0003
 
+/// Version 1 decrypt/encrypt
 #define HONOKAMIKU_DECRYPT_V1  0x00010000
+/// Version 2 decrypt/encrypt
 #define HONOKAMIKU_DECRYPT_V2  0x00020000
+/// Version 3 decrypt/encrypt
 #define HONOKAMIKU_DECRYPT_V3  0x00030000
+/// Version 4 decrypt/encrypt
 #define HONOKAMIKU_DECRYPT_V4  0x00040000
 #define HONOKAMIKU_DECRYPT_V5  0x00050000
 #define HONOKAMIKU_DECRYPT_V6  0x00060000
@@ -28,38 +40,16 @@
 
 namespace HonokaMiku
 {
-	/// \brief Gets game key prefix for specificed game id.
-	/// \param game_id The game ID. Valid game IDs are
-	///                   1. EN/WW Version 2
-	///                   2. JP Version 2/KR
-	///                   3. TW Version 2
-	///                   4. JP Version 3
-	///                   5. CN Version 2
-	///                   6. EN/WW Version 3
-	///                   7. CN Version 3
-	///                   8. TW Version 3
-	/// \returns prefix key of specificed game ID or NULL if game ID is invalid
-	/// \note If you just want to get prefix key, the version doesn't matter.
-	inline const char* GetPrefixFromGameId(char game_id)
-	{
-		switch(game_id)
-		{
-			case 1:
-			case 6: return "BFd3EnkcKa";
-			case 2:
-			case 4: return "Hello";
-			case 3:
-			case 8: return "M2o2B7i3M6o6N88";
-			case 5:
-			case 7: return "iLbs0LpvJrXm3zjdhAr4";
-			default: return NULL;
-		}
-	}
-
-	/// \brief same as GetPrefixFromGameId() except this one operates on `HONOKAMIKU_GAMETYPE_*` constants
+	/// \brief Gets game key prefix for specificed game types.
+	/// \param gt The game type. Valid game types are
+	///                1. #HONOKAMIKU_GAMETYPE_JP
+	///                2. #HONOKAMIKU_GAMETYPE_EN
+	///                3. #HONOKAMIKU_GAMETYPE_TW
+	///                4. #HONOKAMIKU_GAMETYPE_CN
+	/// \returns Prefix key of specificed game type or NULL if invalid game types specificed.
 	inline const char* GetPrefixFromGameType(uint32_t gt)
 	{
-		switch(gt)
+		switch(gt & 0xFFFF)
 		{
 			case HONOKAMIKU_GAMETYPE_JP: return "Hello";
 			case HONOKAMIKU_GAMETYPE_EN: return "BFd3EnkcKa";
@@ -109,7 +99,9 @@ namespace HonokaMiku
 		/// \param filename File name that want to be decrypted. This affects the key calculation.
 		/// \param block_rest The next 12-bytes header of Version 3 encrypted file.
 		virtual void final_setup(const char* filename, const void* block_rest, int32_t fv = 0) = 0;
-		/// \brief Function to get the decrypter filename
+		/// \brief Gets the game property of the current decrypter context.
+		/// \returns Game property. The low 16-bit is the game type, and the upper 16-bit is the
+		///          decrypter version
 		virtual uint32_t get_id() = 0;
 	protected:
 		inline DecrypterContext() {}
@@ -296,7 +288,7 @@ namespace HonokaMiku
 		inline static EN2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
 			EN2_Dctx* dctx = new EN2_Dctx();
-			setupEncryptV2(dctx, GetPrefixFromGameId(1), filename, hdr_out);
+			setupEncryptV2(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_EN), filename, hdr_out);
 			return dctx;
 		}
 	};
@@ -319,7 +311,7 @@ namespace HonokaMiku
 		inline static TW2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
 			TW2_Dctx* dctx = new TW2_Dctx();
-			setupEncryptV2(dctx, GetPrefixFromGameId(3), filename, hdr_out);
+			setupEncryptV2(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), filename, hdr_out);
 			return dctx;
 		}
 	};
@@ -342,7 +334,7 @@ namespace HonokaMiku
 		inline static JP2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
 			JP2_Dctx* dctx = new JP2_Dctx();
-			setupEncryptV2(dctx, GetPrefixFromGameId(2), filename, hdr_out);
+			setupEncryptV2(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_JP), filename, hdr_out);
 			return dctx;
 		}
 	};
@@ -366,7 +358,7 @@ namespace HonokaMiku
 		inline static CN2_Dctx* encrypt_setup(const char* filename, void* hdr_out)
 		{
 			CN2_Dctx* dctx = new CN2_Dctx();
-			setupEncryptV2(dctx, GetPrefixFromGameId(5), filename, hdr_out);
+			setupEncryptV2(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_CN), filename, hdr_out);
 			return dctx;
 		}
 	};
@@ -385,12 +377,11 @@ namespace HonokaMiku
 	/// \brief Creates decrypter context based from the given headers. Auto detect
 	/// \param filename File name that want to be decrypted. This affects the key calculation.
 	/// \param header The first 4-bytes contents of the file
-	/// \param game_type Pointer to store the game ID. See GetPrefixFromGameId() for valid game IDs.
 	/// \returns DecrypterContext or NULL if no suitable decryption method is available.
 	DecrypterContext* FindSuitable(const char* filename, const void* header);
 	
 	/// \brief Creates decrypter context based the game ID.
-	/// \param game_prop The game ID. Valid game IDs can be seen in HonokaMiku.cc Line 86
+	/// \param game_prop The game property. See DecrypterContext::get_id() for more information.
 	/// \param header The first 4-bytes contents of the file
 	/// \param filename File name that want to be decrypted. This affects the key calculation.
 	/// \returns DecrypterContext or NULL if specificed game ID is invalid
@@ -398,14 +389,14 @@ namespace HonokaMiku
 	DecrypterContext* RequestDecrypter(uint32_t game_prop, const void* header, const char* filename);
 	
 	/// \brief Creates decrypter context for encryption based the game ID.
-	/// \param game_id The game ID. See GetPrefixFromGameId() for valid game IDs.
+	/// \param game_prop The game property. See DecrypterContext::get_id() for more information.
 	/// \param filename File name that want to be decrypted. This affects the key calculation.
 	/// \param header_out Pointer to store the file header. The memory size should be 16-bytes
 	///                   to reserve space for Version 3 decrypter.
 	/// \returns DecrypterContext ready for encryption
 	DecrypterContext* RequestEncrypter(uint32_t game_prop, const char* filename, void* header_out);
 
-	/// \brief Get header size for specific decryption types
+	/// \brief Get header size for specific decryption modes.
 	/// \param dectype `HONOAMIKU_DECRYPT_*` constants
 	/// \returns header size (or -1 if unknown)
 	inline int32_t GetHeaderSize(uint32_t dectype)

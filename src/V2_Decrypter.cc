@@ -172,7 +172,7 @@ void HonokaMiku::setupEncryptV2(V2_Dctx* dctx,const char* prefix,const char* fil
 	mctx.Update(reinterpret_cast<const uint8_t*>(basename), strlen(basename));
 	mctx.Final();
 	
-	memcpy(hdr_out,mctx.digestRaw+4,4);
+	memcpy(hdr_out,mctx.digestRaw + 4,4);
 
 	dctx->init_key = ((mctx.digestRaw[0] & 0x7F) << 24) |
 					 (mctx.digestRaw[1] << 16) |

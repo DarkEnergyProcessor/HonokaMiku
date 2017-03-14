@@ -28,7 +28,7 @@ static const uint32_t tw_key_tables[64] = {
 // Version 2 code //
 ////////////////////
 
-HonokaMiku::TW2_Dctx::TW2_Dctx(const void* header, const char* filename):V2_Dctx(HonokaMiku::GetPrefixFromGameId(3), header, filename) {}
+HonokaMiku::TW2_Dctx::TW2_Dctx(const void* header, const char* filename): V2_Dctx(GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), header, filename) {}
 
 uint32_t HonokaMiku::TW2_Dctx::get_id()
 {
@@ -39,7 +39,7 @@ uint32_t HonokaMiku::TW2_Dctx::get_id()
 // Version 3 code //
 ////////////////////
 
-HonokaMiku::TW3_Dctx::TW3_Dctx(const void* header, const char* filename): HonokaMiku::V3_Dctx(HonokaMiku::GetPrefixFromGameId(3), header, filename) {}
+HonokaMiku::TW3_Dctx::TW3_Dctx(const void* header, const char* filename): V3_Dctx(GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), header, filename) {}
 
 const uint32_t* HonokaMiku::TW3_Dctx::_getKeyTables() { return tw_key_tables; }
 
@@ -56,6 +56,6 @@ void HonokaMiku::TW3_Dctx::final_setup(const char* filename, const void* block_r
 HonokaMiku::TW3_Dctx* HonokaMiku::TW3_Dctx::encrypt_setup(const char* filename, void* hdr_out, int force_version)
 {
 	TW3_Dctx* dctx = new TW3_Dctx;
-	setupEncryptV3(dctx, HonokaMiku::GetPrefixFromGameId(3), 1051, filename, hdr_out, force_version);
+	setupEncryptV3(dctx, GetPrefixFromGameType(HONOKAMIKU_GAMETYPE_TW), 1051, filename, hdr_out, force_version);
 	return dctx;
 }

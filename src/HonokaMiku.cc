@@ -266,10 +266,9 @@ void parse_args(int argc, char* argv[])
 					msvcr110_strnicmp("cross-encrypt", arg, 14) == 0
 				)
 				{
-					if((g_XEncryptGame = GetGameProp(argv[i + 1])) == (-1))
-						fprintf(stderr, "Cross-encrypt: Invalid game '%s'", argv[i + 1]);
+					if((g_XEncryptGame = GetGameProp(argv[i++])) == (-1))
+						fprintf(stderr, "Cross-encrypt: Invalid game '%s'\n", argv[i]);
 
-					i++;
 					arg_f = true;
 				}
 			}
