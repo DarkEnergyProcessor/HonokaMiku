@@ -354,7 +354,7 @@ void check_args(char* argv[])
 		
 		exit(EINVAL);
 	}
-	else if(g_Encrypt && g_XEncryptGame)
+	else if(g_Encrypt && g_XEncryptGame != (0xFFFFFFFFU))
 	{
 		fputs("Error: cross-encrypt mode can't be used with encrypt mode\n\n", stderr);
 		fprintf(stderr, usage_string, g_ProgramName);
