@@ -201,7 +201,7 @@ void HonokaMiku::V3_Dctx::jumpV3(V3_Dctx* dctx, uint32_t offset)
 	}
 	
 	if (reset_dctx)
-		dctx->update_key = dctx->init_key;
+		dctx->xor_key = dctx->update_key = dctx->init_key;
 
 	for(; loop_times != 0; loop_times--)
 		dctx->xor_key = (dctx->update_key = (dctx->mul_val * dctx->update_key) + dctx->add_val);
