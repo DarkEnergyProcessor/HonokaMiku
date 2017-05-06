@@ -153,7 +153,7 @@ int32_t GetGameProp(const char* str)
 		else if(str[0] == 't')
 			game_prop = HONOKAMIKU_GAMETYPE_TW | defver;
 		else if(str[0] == 'c')
-			game_prop = HONOKAMIKU_GAMETYPE_JP | defver;
+			game_prop = HONOKAMIKU_GAMETYPE_CN | defver;
 	}
 
 	if(game_prop != 0xFFFFFFFF)
