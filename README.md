@@ -15,7 +15,7 @@ It is also possible to decrypt Playground game files not from LL!SIF if you have
 Documentation
 =============
 
-Documentation? `doxygen src/DecrypterContext.h`
+Documentation? `doxygen`
 
 Embedding in Application
 ========================
@@ -27,4 +27,3 @@ Implementation In Other Languages
 =================================
 Did you rewrite HonokaMiku to other languages? Send me your work and I'll add it in here.
 
-* ~~[PHP Implementation](https://github.com/MikuAuahDark/SIFUniDecrypt) by [MikuAuahDark](https://github.com/MikuAuahDark)~~ (Correspond to HonokaMiku v4.2.1)

@@ -1,0 +1,16 @@
+# Doxyfile 1.8.14
+
+DOXYFILE_ENCODING      = UTF-8
+PROJECT_NAME           = HonokaMiku
+PROJECT_NUMBER         = 5.0.3
+PROJECT_BRIEF          = "Universal LL!SIF decrypter"
+OUTPUT_DIRECTORY       = ./docs
+INPUT                  = src/DecrypterContext.h
+EXTRACT_ALL            = YES
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_TREEVIEW      = YES
+GENERATE_XML           = NO
+
+HTML_OUTPUT            = .
