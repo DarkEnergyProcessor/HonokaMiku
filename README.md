@@ -6,6 +6,11 @@ The code is designed to be cross-platform as possible, so it should compile unde
 
 Basically it allows decryption of LL!SIF game files so that it can be opened without using LL!SIF.
 
+How to compile
+==============
+
+As of 22nd October 2018, [CMake](https://cmake.org/) is now used to build the project.
+
 File decryption support
 =======================
 HonokaMiku supports decryption of SIF EN/WW, JP, TW, and CN game files, from version 1 encryption format to version 4 encryption format.
@@ -21,7 +26,9 @@ Embedding in Application
 ========================
 HonokaMiku is designed as an API at first, so embedding should be easy and straightforward.
 
-Just add `DecrypterContext.h`, `md5.h`, and all `*.cc` (except `HonokaMiku.cc`) files in `src` folder to your project and you're done.
+Just add `DecrypterContext.h`, `md5.h`, `VersionInfo.rc.in`, and all `*.cc` (except `HonokaMiku.cc`) files in `src` folder to your project and you're done.
+
+If you want to build the executable instead, using [CMake](https://cmake.org/) is strongly recommended.
 
 Implementation In Other Languages
 =================================

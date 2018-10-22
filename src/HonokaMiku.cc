@@ -16,7 +16,11 @@
 #endif
 
 #include "DecrypterContext.h"
-#include "../VersionInfo.rc"
+#ifdef HONOKAMIKU_CONFIGURED
+#	include "VersionInfo.rc"
+#else
+#	include "VersionInfo.rc.in"
+#endif
 
 const char* CompilerName()
 {
