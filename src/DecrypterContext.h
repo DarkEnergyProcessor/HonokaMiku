@@ -103,6 +103,7 @@ namespace HonokaMiku
 		/// \returns Game property. The low 16-bit is the game type, and the upper 16-bit is the
 		///          decrypter version
 		virtual uint32_t get_id() = 0;
+		inline virtual ~DecrypterContext() {}
 	protected:
 		inline DecrypterContext() {}
 		/// \brief The key update function. Used to update the key. Used internally and protected
