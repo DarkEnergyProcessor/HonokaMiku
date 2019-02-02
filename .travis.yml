@@ -6,4 +6,4 @@ compiler:
 
 script:
  - cmake -Bbuild -H.
- - cmake --build build
+ - cmake --build build --config Release

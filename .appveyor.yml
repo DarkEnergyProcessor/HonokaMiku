@@ -4,12 +4,13 @@ image: Visual Studio 2013
 clone_depth: 1
 environment:
   matrix:
-  - GENERATOR: Visual Studio 12
-  - GENERATOR: Visual Studio 12 Win64
+  - ARCH: Win32
+    TOOLCHAIN_TARGET: v120_xp
+  - ARCH: x64
+    TOOLCHAIN_TARGET: v120
 build_script:
 - cmd: >-
-    cmake -G "%GENERATOR%" -Bbuild -H. -DCMAKE_INSTALL_PREFIX=./install
-
+    cmake -A %ARCH% -T %TOOLCHAIN_TARGET% -Bbuild -H. -DCMAKE_INSTALL_PREFIX=./install
     cmake --build build --target install --config Release
 artifacts:
 - path: install/bin/HonokaMiku.exe
