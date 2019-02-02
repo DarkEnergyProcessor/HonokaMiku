@@ -11,6 +11,7 @@ environment:
 build_script:
 - cmd: >-
     cmake -A %ARCH% -T %TOOLCHAIN_TARGET% -Bbuild -H. -DCMAKE_INSTALL_PREFIX=./install
+
     cmake --build build --target install --config Release
 artifacts:
 - path: install/bin/HonokaMiku.exe
