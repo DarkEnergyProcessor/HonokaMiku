@@ -1,0 +1,34 @@
+name: Test
+on: [push]
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Configure
+      run: cmake -Bbuild -H. -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=Release
+    - name: Build
+      run: cmake --build build --target install
+    - name: Check Version
+      run: |
+        chmod 777 $PWD/install/bin/HonokaMiku
+        $PWD/install/bin/HonokaMiku -v
+        $PWD/install/bin/HonokaMiku -?
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v1
+    - name: Configure
+      shell: cmd
+      run: cmake -Bbuild -H. -A x64 -DCMAKE_INSTALL_PREFIX=%CD%\install
+    - name: Build
+      shell: cmd
+      run: cmake --build build --config Release --target install
+    - name: Check Version
+      shell: cmd
+      run: |
+        %CD%\install\bin\HonokaMiku -v
+        %CD%\install\bin\HonokaMiku -?
