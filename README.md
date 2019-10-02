@@ -9,6 +9,8 @@ The code is designed to be cross-platform as possible, so it should compile unde
 
 Basically it allows decryption of LL!SIF game files so that it can be opened without using LL!SIF.
 
+**Due to an incident that breaks LL!SIF, this decrypter is no longer updated!**
+
 How to compile
 ==============
 
