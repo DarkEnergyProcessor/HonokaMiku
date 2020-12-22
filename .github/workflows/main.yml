@@ -1,34 +1,88 @@
 name: Test
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Configure
       run: cmake -Bbuild -H. -DCMAKE_INSTALL_PREFIX=$PWD/install -DCMAKE_BUILD_TYPE=Release
     - name: Build
       run: cmake --build build --target install
+    - name: Chmod
+      run: chmod 777 $PWD/install/bin/HonokaMiku
+    - name: Test Program
+      run: $PWD/install/bin/HonokaMiku -?
     - name: Check Version
-      run: |
-        chmod 777 $PWD/install/bin/HonokaMiku
-        $PWD/install/bin/HonokaMiku -v
-        $PWD/install/bin/HonokaMiku -?
+      run: $PWD/install/bin/HonokaMiku -v
+    - name: Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: HonokaMiku-linux-x86-64
+        path: install
   build-windows:
     runs-on: windows-latest
+    strategy:
+      matrix:
+        platform: [Win32, x64]
     steps:
     - name: Checkout
-      uses: actions/checkout@v1
+      uses: actions/checkout@v2
     - name: Configure
       shell: cmd
-      run: cmake -Bbuild -H. -A x64 -DCMAKE_INSTALL_PREFIX=%CD%\install
+      run: cmake -Bbuild -H. -A ${{ matrix.platform }} -DCMAKE_INSTALL_PREFIX=%CD%\install
     - name: Build
       shell: cmd
       run: cmake --build build --config Release --target install
+    - name: Test Program
+      shell: cmd
+      run: %CD%\install\bin\HonokaMiku -?
     - name: Check Version
       shell: cmd
-      run: |
-        %CD%\install\bin\HonokaMiku -v
-        %CD%\install\bin\HonokaMiku -?
+      run: %CD%\install\bin\HonokaMiku -v
+    - name: Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: HonokaMiku-windows-${{ matrix.platform }}
+        path: install
+  build-windows-arm64:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      shell: cmd
+      run: cmake -Bbuild -H. -A ARM64 -DCMAKE_INSTALL_PREFIX=%CD%\install
+    - name: Build
+      shell: cmd
+      run: cmake --build build --config Release --target install
+    - name: Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: HonokaMiku-windows-ARM64
+        path: install
+  build-android:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        android-abi: [arm64-v8a, x86_64, armeabi-v7a, x86]
+    steps:
+    - name: Setup Android NDK r21d
+      uses: nttld/setup-ndk@v1
+      with:
+        ndk-version: r21d
+    - name: Setup NDK Path
+      run: echo "ANDROID_NDK_ROOT=${{ steps.setup-ndk.outputs.ndk-path }}" >> $GITHUB_ENV
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: Configure
+      run: cmake -DCMAKE_SYSTEM_NAME=Android -DCMAKE_ANDROID_ARCH_ABI=${{ matrix.android-abi }} -DCMAKE_SYSTEM_VERSION=21 -Bbuild -H. -DCMAKE_INSTALL_PREFIX=%CD%\install -DCMAKE_BUILD_TYPE=Release
+    - name: Build
+      run: cmake --build build --target install
+    - name: Artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: HonokaMiku-android-${{ matrix.android-abi }}
+        path: install
