@@ -79,7 +79,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: Configure
-      run: cmake -DCMAKE_SYSTEM_NAME=Android -DCMAKE_ANDROID_ARCH_ABI=${{ matrix.android-abi }} -DCMAKE_SYSTEM_VERSION=21 -Bbuild -H. -DCMAKE_INSTALL_PREFIX=%CD%\install -DCMAKE_BUILD_TYPE=Release
+      run: cmake -DCMAKE_SYSTEM_NAME=Android -DCMAKE_ANDROID_ARCH_ABI=${{ matrix.android-abi }} -DCMAKE_SYSTEM_VERSION=21 -Bbuild -H. -DCMAKE_INSTALL_PREFIX=$PWD\install -DCMAKE_BUILD_TYPE=Release
     - name: Build
       run: cmake --build build --target install
     - name: Artifact
