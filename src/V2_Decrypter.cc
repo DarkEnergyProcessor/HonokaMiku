@@ -145,7 +145,7 @@ void HonokaMiku::V2_Dctx::goto_offset_relative(int32_t offset)
 	int64_t x = pos + offset;
 	if(x < 0) throw std::runtime_error(std::string("Position is negative."));
 
-	goto_offset(x);
+	goto_offset(uint32_t(x));
 }
 
 inline void HonokaMiku::V2_Dctx::update()

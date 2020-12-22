@@ -25,7 +25,7 @@ HonokaMiku::V1_Dctx::V1_Dctx(const char* prefix, const char* filename)
 	mctx.Final();
 
 	pos = 0;
-	update_key = basename_len + 1;
+	update_key = uint32_t(basename_len + 1);
 	xor_key = init_key =
 		(mctx.digestRaw[0] << 24) |
 		(mctx.digestRaw[1] << 16) |
@@ -203,5 +203,5 @@ void HonokaMiku::V1_Dctx::goto_offset_relative(int32_t offset)
 	int64_t x = pos + offset;
 	if(x < 0) throw std::runtime_error(std::string("Position is negative."));
 
-	goto_offset(x);
+	goto_offset(uint32_t(x));
 }

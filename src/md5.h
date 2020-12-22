@@ -28,6 +28,8 @@
 
 // From https://bobobobo.wordpress.com/2010/10/17/md5-c-implementation/
 
+// This version is modified to compile as C++
+
 #include <stdio.h>
 #include <string.h>
 
@@ -253,7 +255,7 @@ public:
   // context.
   void Update(
     const unsigned char *input,   // input block
-    unsigned int inputLen ) // length of input block
+    size_t inputLen ) // length of input block
   {
     unsigned int i, index, partLen;
 
@@ -339,7 +341,7 @@ public:
 
     FILE *file;
     
-    int len;
+    size_t len;
     unsigned char buffer[1024] ;
 
     if( (file = fopen (filename, "rb")) == NULL )
