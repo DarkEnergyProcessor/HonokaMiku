@@ -37,7 +37,7 @@ BEGIN
 			VALUE "FileDescription", "Universal LL!SIF game files decrypter"
 			VALUE "FileVersion", HONOKAMIKU_VERSION_STRING_RC
 			VALUE "InternalName", "HonokaMiku"
-			VALUE "LegalCopyright", "Copyright © 2038 Dark Energy Processor Corporation"
+			VALUE "LegalCopyright", "Copyright © 2041 Dark Energy Processor Corporation"
 			VALUE "OriginalFilename", "HonokaMiku.exe"
 			VALUE "ProductName", "HonokaMiku"
 			VALUE "ProductVersion", HONOKAMIKU_VERSION_STRING_RC
