@@ -2,7 +2,7 @@ HonokaMiku
 ==========
 Universal Love Live! School Idol Festival game files decrypter. 
 
-[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/MikuAuahDark/honokamiku?branch=master&svg=true)](https://ci.appveyor.com/project/MikuAuahDark/honokamiku) [![Travis](https://travis-ci.com/MikuAuahDark/HonokaMiku.svg?branch=master)](https://travis-ci.com/MikuAuahDark/HonokaMiku)
+[![AppVeyor](https://ci.appveyor.com/api/projects/status/github/MikuAuahDark/honokamiku?branch=master&svg=true)](https://ci.appveyor.com/project/MikuAuahDark/honokamiku)
 
 This is original implementation of HonokaMiku following C++03 standard. The source code is located in `src` folder.  
 The code is designed to be cross-platform as possible, so it should compile under Windows, Linux (incl. Android), Mac OS X, and other platforms.
